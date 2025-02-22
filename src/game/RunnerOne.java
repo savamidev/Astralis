@@ -1,37 +1,36 @@
 package game;
 
-import game.menuPrincipal.Background;
-import game.menuPrincipal.MenuPanel;
-
+import game.panlesBBDD.menuPrincipal.IntroMother;
 import javax.swing.*;
 import java.awt.*;
 
 public class RunnerOne extends JFrame {
 
-    private static int FRAME_WIDTH = 1920;
-    private static int FRAME_HEIGHT = 1080;
-
-    private CardLayout cardLayout;
-    private JPanel panelContenedor;
-
-
     public RunnerOne() {
+        initUI();
+    }
 
-        setTitle("Juego - Menú Principal");
-        setSize(FRAME_WIDTH, FRAME_HEIGHT);
+    private void initUI() {
+        setTitle("Quirk");
+        setSize(1920, 1080);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        cardLayout = new CardLayout();
-        panelContenedor = new JPanel(cardLayout);
-        panelContenedor.setLayout(null);
+        // Nivel externo: CardLayout para intercambiar IntroMother y VideoPanel
+        CardLayout outerLayout = new CardLayout();
+        JPanel outerContainer = new JPanel(outerLayout);
+        outerContainer.setOpaque(false);
 
+        // Solo se agrega la intro inicialmente.
+        IntroMother introMother = new IntroMother(outerLayout, outerContainer);
+        outerContainer.add(introMother, "IntroMother");
 
-        setContentPane(new Background());
-        
+        setContentPane(outerContainer);
+        outerLayout.show(outerContainer, "IntroMother");
         setVisible(true);
     }
 
-
-
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new RunnerOne());
+    }
 }
