@@ -1,4 +1,4 @@
-package game.panlesBBDD.modelsIntro.movements;
+package game.controls.movements;
 
 import javax.swing.*;
 import java.awt.*;
