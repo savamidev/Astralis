@@ -17,6 +17,8 @@ public class RunnerOne extends JFrame {
         setSize(1920, 1080); // Establece el tamaño de la ventana (1920x1080)
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Define la acción cuando se cierra la ventana (termina la aplicación)
         setLocationRelativeTo(null); // Centra la ventana en la pantalla
+        setResizable(false);
+
 
         // Nivel externo: CardLayout para intercambiar los paneles (IntroMother y VideoPanel)
         CardLayout outerLayout = new CardLayout(); // Crea un objeto CardLayout para gestionar los paneles

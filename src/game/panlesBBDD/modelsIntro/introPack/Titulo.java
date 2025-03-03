@@ -30,7 +30,7 @@ public class Titulo extends JPanel {
         setLayout(new GridBagLayout()); // Se usa para centrar la imagen.
 
         // Carga la imagen del título.
-        ImageIcon icon = new ImageIcon("src/resources/titulo.png");
+        ImageIcon icon = new ImageIcon("sr/resources/titulo.png");
         image = icon.getImage();
 
         // Timer para animación: fade-in, pausa y fade-out
