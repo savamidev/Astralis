@@ -5,6 +5,9 @@ import java.awt.*;
 import javax.sound.sampled.*;
 import java.net.URL;
 
+/**
+ * Representa al jugador y gestiona sus movimientos, animaciones y acciones (como salto y dash).
+ */
 public class Player {
     private enum State {IDLE, WALKING_LEFT, WALKING_RIGHT, JUMPING_LEFT, JUMPING_RIGHT, FALLING}
     private State currentState;
@@ -43,6 +46,18 @@ public class Player {
     private Clip walkingClip;
     private Clip jumpClip;
 
+    // Campos para dash (habilitado al tener la sandía)
+    private boolean dashing = false;
+    private long dashStartTime = 0;
+    private final int DASH_DURATION = 200; // duración en milisegundos
+    private final int DASH_SPEED = 20;     // velocidad del dash
+
+    /**
+     * Constructor que inicializa el jugador, sus animaciones y su posición inicial.
+     * @param startX Posición inicial en X.
+     * @param floorY Posición Y del suelo.
+     * @param worldWidth Ancho del mundo.
+     */
     public Player(int startX, int floorY, int worldWidth) {
         this.x = startX;
         this.floorY = floorY;
@@ -151,23 +166,27 @@ public class Player {
         }
     }
 
-    // Modificamos los métodos de movimiento para incluir el audio
     public void moveLeft() {
         dx = -SPEED;
         startWalkingSound();
     }
+
     public void moveRight() {
         dx = SPEED;
         startWalkingSound();
     }
+
     public void stop() {
         dx = 0;
         stopWalkingSound();
     }
+
     public void moveDown() { }
     public void stopDown() { }
 
-    // Método modificado para el salto: reproduce el sonido solo si no se está reproduciendo ya.
+    /**
+     * Realiza un salto; si se posee la sandía se permite un doble salto.
+     */
     public void jump() {
         int availableJumps = state.hasSandia() ? 2 : 1;
         if (currentJumpCount < availableJumps) {
@@ -185,10 +204,10 @@ public class Player {
         }
     }
 
-    // Método auxiliar para reproducir el sonido de aterrizaje (se mantiene como one-shot)
+    // Método auxiliar para reproducir el sonido de aterrizaje (one-shot)
     private void playLandingSound() {
         try {
-            URL url = getClass().getResource("/resources/sound/paso.wav");
+            URL url = getClass().getResource("/resources/sound/personaje/landing.wav");
             if (url == null) {
                 System.err.println("No se encontró el archivo landing.wav");
                 return;
@@ -202,6 +221,9 @@ public class Player {
         }
     }
 
+    /**
+     * Actualiza el estado, posición y animación del jugador, así como el dash si está activo.
+     */
     public void update() {
         updateState();
         currentAnimation.update();
@@ -213,7 +235,6 @@ public class Player {
         if (dy > TERMINAL_VELOCITY)
             dy = TERMINAL_VELOCITY;
 
-        // Al aterrizar, reproducir sonido de aterrizaje y resetear saltos
         if (y + height >= floorY) {
             if (wasInAir) {
                 playLandingSound();
@@ -225,7 +246,34 @@ public class Player {
             currentJumpCount = 0;
         }
 
+        // Procesar dash: si ha pasado la duración, se termina el dash
+        if (dashing && System.currentTimeMillis() - dashStartTime >= DASH_DURATION) {
+            dashing = false;
+            dx = 0;
+            System.out.println("Dash finalizado.");
+        }
+
         x = Math.max(0, Math.min(x, worldWidth - width));
+    }
+
+    /**
+     * Ejecuta un dash horizontal si el jugador tiene la sandía.
+     */
+    public void dash() {
+        if (!state.hasSandia()) {
+            System.out.println("Dash no activado: no se tiene la sandía.");
+            return;
+        }
+        if (!dashing) {
+            dashing = true;
+            dashStartTime = System.currentTimeMillis();
+            if (dx == 0) {
+                dx = DASH_SPEED;
+            } else {
+                dx = (dx > 0) ? DASH_SPEED : -DASH_SPEED;
+            }
+            System.out.println("Dash activado.");
+        }
     }
 
     public Rectangle getCollisionRectangle() {
@@ -244,12 +292,15 @@ public class Player {
         return new Rectangle(feetX, feetY, feetWidth, feetHeight);
     }
 
-    // Nuevo método para detectar colisiones en la parte superior (cabeza)
+    /**
+     * Devuelve el área de colisión de la cabeza del jugador.
+     * @return Rectángulo correspondiente.
+     */
     public Rectangle getHeadRectangle() {
         int headWidth = width / 2;
         int headHeight = 5;
         int headX = x + (width - headWidth) / 2;
-        int headY = y; // parte superior del jugador
+        int headY = y;
         return new Rectangle(headX, headY, headWidth, headHeight);
     }
 

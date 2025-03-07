@@ -30,7 +30,7 @@ public class IntroMother extends JPanel {
         setLayout(new BorderLayout()); // Define el diseño del panel como BorderLayout.
 
         // Carga la imagen de fondo desde los recursos.
-        backgroundImage = new ImageIcon("src/resources/background GIF.gif").getImage();
+        backgroundImage = new ImageIcon("resources/sound/background GIF.gif").getImage();
 
         // Inicializa y reproduce el audio de introducción en bucle.
         introAudio = new IntroAudio("src/resources/SoundIntro.wav");
