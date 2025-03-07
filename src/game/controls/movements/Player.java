@@ -2,6 +2,8 @@ package game.controls.movements;
 
 import javax.swing.*;
 import java.awt.*;
+import javax.sound.sampled.*;
+import java.net.URL;
 
 public class Player {
     private enum State {IDLE, WALKING_LEFT, WALKING_RIGHT, JUMPING_LEFT, JUMPING_RIGHT, FALLING}
@@ -10,6 +12,7 @@ public class Player {
     private int width, height;
     private int dx, dy;
     private boolean jumping;
+    private boolean wasInAir = false;
 
     private AnimationPlayer idleAnimation;
     private AnimationPlayer moveLeftAnimation;
@@ -19,13 +22,11 @@ public class Player {
     private AnimationPlayer fallAnimation;
     private AnimationPlayer currentAnimation;
 
-    private final int SPEED = 10;
+    private final int SPEED = 5;
     private final int JUMP_STRENGTH = -30; // negativo para subir
     private final double GRAVITY = 2;
     private final int TERMINAL_VELOCITY = 20;
-    // El piso (suelo) se fija en 440
     private int floorY;
-    // Se usa worldWidth para clamping horizontal (por ejemplo, 1920)
     private int worldWidth;
 
     private PlayerState state;
@@ -38,7 +39,10 @@ public class Player {
     private static final int COUNT_FALL = 19;
     private static final long FRAME_DELAY = 50;
 
-    // Constructor: se recibe startX, floorY (suelo fijo) y worldWidth (ancho de la pantalla)
+    // Campos para el audio
+    private Clip walkingClip;
+    private Clip jumpClip;
+
     public Player(int startX, int floorY, int worldWidth) {
         this.x = startX;
         this.floorY = floorY;
@@ -50,26 +54,22 @@ public class Player {
         state = new PlayerState();
         currentJumpCount = 0;
 
-        // Define claramente aquí las dimensiones deseadas:
-        int newWidth = 150;  // <-- Ajusta al tamaño que quieras
-        int newHeight = 150; // <-- Ajusta al tamaño que quieras
+        int newWidth = 150;
+        int newHeight = 150;
 
-        idleAnimation = new AnimationPlayer(loadAnimationImages("/resources/2BlueWizardIdle/", COUNT_IDLE, newWidth, newHeight), FRAME_DELAY);
-        moveLeftAnimation = new AnimationPlayer(loadAnimationImages("/resources/2BlueWizardWalkLeft/", COUNT_LEFT, newWidth, newHeight), FRAME_DELAY);
-        moveRightAnimation = new AnimationPlayer(loadAnimationImages("/resources/2BlueWizardWalkRight/", COUNT_RIGHT, newWidth, newHeight), FRAME_DELAY);
-        jumpLeftAnimation = new AnimationPlayer(loadAnimationImages("/resources/2BlueWizardJumpLeft/", COUNT_JUMP, newWidth, newHeight), FRAME_DELAY);
-        jumpRightAnimation = new AnimationPlayer(loadAnimationImages("/resources/2BlueWizardJumpRight/", COUNT_JUMP, newWidth, newHeight), FRAME_DELAY);
-        fallAnimation = new AnimationPlayer(loadAnimationImages("/resources/2BlueWizardIdle/", COUNT_FALL, newWidth, newHeight), FRAME_DELAY);
+        idleAnimation = new AnimationPlayer(loadAnimationImages("/resources/imagen/personajemove/2BlueWizardIdle/", COUNT_IDLE, newWidth, newHeight), FRAME_DELAY);
+        moveLeftAnimation = new AnimationPlayer(loadAnimationImages("/resources/imagen/personajemove/2BlueWizardWalkLeft/", COUNT_LEFT, newWidth, newHeight), FRAME_DELAY);
+        moveRightAnimation = new AnimationPlayer(loadAnimationImages("/resources/imagen/personajemove/2BlueWizardWalkRight/", COUNT_RIGHT, newWidth, newHeight), FRAME_DELAY);
+        jumpLeftAnimation = new AnimationPlayer(loadAnimationImages("/resources/imagen/personajemove/2BlueWizardJumpLeft/", COUNT_JUMP, newWidth, newHeight), FRAME_DELAY);
+        jumpRightAnimation = new AnimationPlayer(loadAnimationImages("/resources/imagen/personajemove/2BlueWizardJumpRight/", COUNT_JUMP, newWidth, newHeight), FRAME_DELAY);
+        fallAnimation = new AnimationPlayer(loadAnimationImages("/resources/imagen/personajemove/2BlueWizardIdle/", COUNT_FALL, newWidth, newHeight), FRAME_DELAY);
 
         currentAnimation = idleAnimation;
 
         width = newWidth;
         height = newHeight;
-
         this.y = floorY - height;
     }
-
-
 
     private Image[] loadAnimationImages(String basePath, int count, int newWidth, int newHeight) {
         Image[] frames = new Image[count];
@@ -84,8 +84,6 @@ public class Player {
         }
         return frames;
     }
-
-
 
     private void updateState() {
         if (jumping) {
@@ -118,19 +116,89 @@ public class Player {
         }
     }
 
-    public void jump() {
-        int availableJumps = state.hasSandia() ? 2 : 1;
-        if (currentJumpCount < availableJumps) {
-            dy = JUMP_STRENGTH;
-            jumping = true;
-            currentJumpCount++;
+    // Método para cargar un Clip desde un recurso
+    private Clip loadClip(String path) {
+        try {
+            URL url = getClass().getResource(path);
+            if (url == null) {
+                System.err.println("No se encontró el archivo de audio: " + path);
+                return null;
+            }
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(url);
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioStream);
+            return clip;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
-    public void takeDamage() {
-        state.reduceLife(1);
-        if (state.isDead()) {
-            System.out.println("El jugador ha muerto.");
+    // Métodos para manejar el sonido al caminar
+    private void startWalkingSound() {
+        if (walkingClip == null) {
+            walkingClip = loadClip("/resources/sound/personaje/paso.wav");
+        }
+        if (walkingClip != null && !walkingClip.isActive()) {
+            walkingClip.setFramePosition(0);
+            walkingClip.loop(Clip.LOOP_CONTINUOUSLY);
+        }
+    }
+
+    private void stopWalkingSound() {
+        if (walkingClip != null && walkingClip.isActive()) {
+            walkingClip.stop();
+        }
+    }
+
+    // Modificamos los métodos de movimiento para incluir el audio
+    public void moveLeft() {
+        dx = -SPEED;
+        startWalkingSound();
+    }
+    public void moveRight() {
+        dx = SPEED;
+        startWalkingSound();
+    }
+    public void stop() {
+        dx = 0;
+        stopWalkingSound();
+    }
+    public void moveDown() { }
+    public void stopDown() { }
+
+    // Método modificado para el salto: reproduce el sonido solo si no se está reproduciendo ya.
+    public void jump() {
+        int availableJumps = state.hasSandia() ? 2 : 1;
+        if (currentJumpCount < availableJumps) {
+            if (jumpClip == null) {
+                jumpClip = loadClip("/resources/sound/personaje/jump.wav");
+            }
+            if (jumpClip != null && !jumpClip.isActive()) {
+                jumpClip.setFramePosition(0);
+                jumpClip.start();
+            }
+            dy = JUMP_STRENGTH;
+            jumping = true;
+            currentJumpCount++;
+            wasInAir = true;
+        }
+    }
+
+    // Método auxiliar para reproducir el sonido de aterrizaje (se mantiene como one-shot)
+    private void playLandingSound() {
+        try {
+            URL url = getClass().getResource("/resources/sound/paso.wav");
+            if (url == null) {
+                System.err.println("No se encontró el archivo landing.wav");
+                return;
+            }
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(url);
+            Clip landingClip = AudioSystem.getClip();
+            landingClip.open(audioStream);
+            landingClip.start();
+        } catch(Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -138,51 +206,52 @@ public class Player {
         updateState();
         currentAnimation.update();
 
-        // Actualiza la posición
         x += dx;
         y += dy;
 
-        // Aplicar gravedad
         dy += GRAVITY;
         if (dy > TERMINAL_VELOCITY)
             dy = TERMINAL_VELOCITY;
 
-        // Si se sobrepasa el suelo, ajustar para que el jugador quede apoyado
+        // Al aterrizar, reproducir sonido de aterrizaje y resetear saltos
         if (y + height >= floorY) {
+            if (wasInAir) {
+                playLandingSound();
+                wasInAir = false;
+            }
             y = floorY - height;
             dy = 0;
             jumping = false;
             currentJumpCount = 0;
         }
 
-        // Clampea la posición horizontal para que x esté entre 0 y (worldWidth - width)
         x = Math.max(0, Math.min(x, worldWidth - width));
     }
 
     public Rectangle getCollisionRectangle() {
-        int hitboxWidth = width / 3;  // más estrecho para colisiones laterales
+        int hitboxWidth = width / 3;
         int hitboxHeight = height - 10;
         int hitboxX = x + (width - hitboxWidth) / 2;
         int hitboxY = y + (height - hitboxHeight) / 2;
         return new Rectangle(hitboxX, hitboxY, hitboxWidth, hitboxHeight);
     }
 
-
-    // Método revisado y reducido al mínimo posible
     public Rectangle getFeetRectangle() {
-        int feetWidth = width / 2; // más estrecho, para precisión horizontal
-        int feetHeight = 5;        // mínimo absoluto para precisión vertical
+        int feetWidth = width / 2;
+        int feetHeight = 5;
         int feetX = x + (width - feetWidth) / 2;
-        int feetY = y + height - feetHeight; // solo la parte inferior
+        int feetY = y + height - feetHeight;
         return new Rectangle(feetX, feetY, feetWidth, feetHeight);
     }
 
-
-    public void moveLeft() { dx = -SPEED; }
-    public void moveRight() { dx = SPEED; }
-    public void stop() { dx = 0; }
-    public void moveDown() { }
-    public void stopDown() { }
+    // Nuevo método para detectar colisiones en la parte superior (cabeza)
+    public Rectangle getHeadRectangle() {
+        int headWidth = width / 2;
+        int headHeight = 5;
+        int headX = x + (width - headWidth) / 2;
+        int headY = y; // parte superior del jugador
+        return new Rectangle(headX, headY, headWidth, headHeight);
+    }
 
     public int getWidth() { return width; }
     public int getHeight() { return height; }
@@ -202,10 +271,7 @@ public class Player {
         jumping = false;
         currentJumpCount = 0;
     }
-
     public int getDx() {
         return dx;
     }
-
-
 }

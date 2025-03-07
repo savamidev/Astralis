@@ -21,7 +21,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private int worldHeight = 1080;
 
     // Modo debug para dibujar el TileMap con 50% de transparencia
-    private final boolean debugMode = true;
+    private final boolean debugMode = false;
 
     public GamePanel() {
         setPreferredSize(new Dimension(1920, 1080));
@@ -40,13 +40,13 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         // Inicializar el CollisionManager
         collisionManager = new CollisionManager(tileMap);
 
-        // Usar un suelo fijo de 440
-        int floorY = 650;
+        // Usar un suelo fijo de 650 (como se define en el constructor del jugador)
+        int floorY = 750;
 
         // Inicializar al jugador usando floorY y worldWidth para límites horizontales.
-        player = new Player(100, floorY, worldWidth);
+        player = new Player(200, floorY, worldWidth);
 
-        // Inicializar la cámara (como el mundo coincide con la pantalla, el offset será 0)
+        // Inicializar la cámara
         camera = new Camera(player, 3000, 1080, worldWidth, worldHeight);
 
         // Cargar la imagen de fondo
@@ -92,14 +92,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             g2d.setComposite(originalComposite);
         }
 
-        // Dibuja al jugador en su posición exacta con respecto al offset de la cámara
+        // Dibuja al jugador sin volver a restar el offset, ya que la transformación global ya se aplicó
         Image playerImg = player.getImage();
         if (playerImg != null) {
-            g2d.drawImage(playerImg, player.getX() - camera.getOffsetX(), player.getY() - camera.getOffsetY(), player.getWidth(), player.getHeight(), this);
+            g2d.drawImage(playerImg, player.getX(), player.getY(), player.getWidth(), player.getHeight(), this);
         } else {
             // Dibuja un rectángulo si la imagen del jugador es nula (debug visual)
             g2d.setColor(Color.RED);
-            g2d.fillRect(player.getX() - camera.getOffsetX(), player.getY() - camera.getOffsetY(), player.getWidth(), player.getHeight());
+            g2d.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
         }
 
         g2d.dispose();
@@ -146,18 +146,29 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         player.update(); // El jugador actualiza su propia posición (x,y).
 
-        // Primero comprobar colisión vertical claramente
+        // Comprobar colisión en la parte superior (cabeza) cuando el jugador sube (dy negativo)
+        if (player.getDy() < 0) {
+            Rectangle headRect = player.getHeadRectangle();
+            if (collisionManager.isColliding(headRect)) {
+                int tileSize = tileMap.getTileSize();
+                int collisionRow = headRect.y / tileSize;
+                int newY = (collisionRow + 1) * tileSize;
+                player.setPosition(player.getX(), newY);
+                player.resetVerticalMotion();
+            }
+        }
+
+        // Comprobar colisión vertical (pies del jugador)
         Rectangle feetRect = player.getFeetRectangle();
         if (player.getDy() >= 0 && collisionManager.isColliding(feetRect)) {
             int tileSize = tileMap.getTileSize();
             int collisionRow = (feetRect.y + feetRect.height) / tileSize;
-
             int newY = collisionRow * tileSize - player.getHeight();
             player.setPosition(player.getX(), newY);
             player.resetVerticalMotion();
         }
 
-        // Luego comprobar colisión lateral claramente (por separado)
+        // Comprobar colisión lateral
         Rectangle collisionRect = player.getCollisionRectangle();
         if (collisionManager.isColliding(collisionRect)) {
             player.setPosition(oldX, player.getY());
@@ -171,9 +182,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             ((PrinciPanel) ancestor).repaintAll();
         }
     }
-
-
-
 
     @Override
     public void keyPressed(KeyEvent e) {
