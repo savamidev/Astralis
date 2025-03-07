@@ -35,12 +35,12 @@ public class Player {
     private PlayerState state;
     private int currentJumpCount;
 
-    private static final int COUNT_IDLE = 19;
-    private static final int COUNT_LEFT = 19;
-    private static final int COUNT_RIGHT = 19;
-    private static final int COUNT_JUMP = 15;
-    private static final int COUNT_FALL = 19;
-    private static final long FRAME_DELAY = 50;
+    private static final int COUNT_IDLE = 4;
+    private static final int COUNT_LEFT = 7;
+    private static final int COUNT_RIGHT = 7;
+    private static final int COUNT_JUMP = 7;
+    private static final int COUNT_FALL = 4;
+    private static final long FRAME_DELAY = 250;
 
     // Campos para el audio
     private Clip walkingClip;
