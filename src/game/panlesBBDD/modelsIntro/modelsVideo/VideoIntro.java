@@ -1,6 +1,5 @@
 package game.panlesBBDD.modelsIntro.modelsVideo;
 
-import game.panlesBBDD.stageOne.PrinciPanel;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
@@ -69,13 +68,13 @@ public class VideoIntro extends JFXPanel {
                     // Verifica si el PrinciPanel ya está agregado; si no, lo crea y agrega.
                     boolean existePrinciPanel = false;
                     for (Component comp : outerContainer.getComponents()) {
-                        if (comp instanceof PrinciPanel) {
+                        if (comp instanceof game.panlesBBDD.stageOne.PrinciPanel) {
                             existePrinciPanel = true;
                             break;
                         }
                     }
                     if (!existePrinciPanel) {
-                        PrinciPanel princiPanel = new PrinciPanel();
+                        game.panlesBBDD.stageOne.PrinciPanel princiPanel = new game.panlesBBDD.stageOne.PrinciPanel();
                         outerContainer.add(princiPanel, "PrinciPanel");
                     }
                     outerLayout.show(outerContainer, "PrinciPanel");

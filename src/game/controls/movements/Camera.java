@@ -15,15 +15,22 @@ public class Camera {
         this.worldHeight = worldHeight;
     }
 
+    // Se centra en el jugador usando su centro (mitad de ancho y alto)
     public int getOffsetX() {
-        int desired = player.getX() - screenWidth / 2;
+        if (worldWidth <= screenWidth) {
+            return (worldWidth - screenWidth) / 2;
+        }
+        int desired = player.getX() + player.getWidth() / 2 - screenWidth / 2;
         if (desired < 0) return 0;
         if (desired > worldWidth - screenWidth) return worldWidth - screenWidth;
         return desired;
     }
 
     public int getOffsetY() {
-        int desired = player.getY() - screenHeight / 2;
+        if (worldHeight <= screenHeight) {
+            return (worldHeight - screenHeight) / 2;
+        }
+        int desired = player.getY() + player.getHeight() / 2 - screenHeight / 2;
         if (desired < 0) return 0;
         if (desired > worldHeight - screenHeight) return worldHeight - screenHeight;
         return desired;

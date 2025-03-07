@@ -1,28 +1,61 @@
 package game.controls.movements;
 
+import game.map.TileMap;
 import game.panlesBBDD.stageOne.PrinciPanel;
+import game.collision.CollisionManager;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.net.URL;
 
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private Timer timer;
     private Player player;
     private Camera camera;
+    private TileMap tileMap;
+    private CollisionManager collisionManager;
+    private Image backgroundImage;
+    // Se fija el mundo a 1920x1080
+    private int worldWidth = 3000;
+    private int worldHeight = 1080;
 
-    public GamePanel(game.map.SOMap mapa) {
+    // Modo debug para dibujar el TileMap con 50% de transparencia
+    private final boolean debugMode = true;
+
+    public GamePanel() {
         setPreferredSize(new Dimension(1920, 1080));
-        setOpaque(false);  // Para que se vea el fondo
+        setOpaque(false);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
         addKeyListener(this);
 
-        // Inicializa el jugador
-        player = new Player(100, 100);
+        int tileSize = 40;
+        // Cargar el TileMap desde el archivo CSV
+        tileMap = new TileMap("/resources/Map01.csv", tileSize);
+        // Forzamos el mundo a 1920x1080, ignorando la altura que pueda indicar el CSV
+        worldWidth = 3000;
+        worldHeight = 1080;
 
-        // Inicializa la cámara usando el tamaño de pantalla y las dimensiones del mapa
-        camera = new Camera(player, 1920, 1080, mapa.getWidth(), mapa.getHeight());
+        // Inicializar el CollisionManager
+        collisionManager = new CollisionManager(tileMap);
+
+        // Usar un suelo fijo de 440
+        int floorY = 650;
+
+        // Inicializar al jugador usando floorY y worldWidth para límites horizontales.
+        player = new Player(100, floorY, worldWidth);
+
+        // Inicializar la cámara (como el mundo coincide con la pantalla, el offset será 0)
+        camera = new Camera(player, 3000, 1080, worldWidth, worldHeight);
+
+        // Cargar la imagen de fondo
+        URL bgUrl = getClass().getResource("/resources/fondoS4.png");
+        if (bgUrl != null) {
+            backgroundImage = new ImageIcon(bgUrl).getImage();
+        } else {
+            System.err.println("No se encontró la imagen de fondo en /resources/fondoS4.png");
+        }
 
         timer = new Timer(16, this);
         timer.start();
@@ -37,39 +70,115 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        // Ahora aplicamos la misma transformación para dibujar al jugador
         camera.setScreenSize(getWidth(), getHeight());
         Graphics2D g2d = (Graphics2D) g.create();
+
         int offsetX = camera.getOffsetX();
         int offsetY = camera.getOffsetY();
+
+        // Traslada el origen según la cámara
         g2d.translate(-offsetX, -offsetY);
 
-        // Dibuja al jugador en sus coordenadas en el mundo
-        Image img = player.getImage();
-        if (img != null) {
-            g2d.drawImage(img, player.getX(), player.getY(), this);
-        } else {
-            g2d.setColor(Color.RED);
-            g2d.fillRect(player.getX(), player.getY(), 50, 50);
+        // Dibuja la imagen de fondo ajustada al mundo
+        if (backgroundImage != null) {
+            g2d.drawImage(backgroundImage, 0, 0, worldWidth, worldHeight, this);
         }
+
+        // Dibuja el TileMap si está activo el modo debug
+        if (debugMode) {
+            Composite originalComposite = g2d.getComposite();
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+            drawTileMap(g2d);
+            g2d.setComposite(originalComposite);
+        }
+
+        // Dibuja al jugador en su posición exacta con respecto al offset de la cámara
+        Image playerImg = player.getImage();
+        if (playerImg != null) {
+            g2d.drawImage(playerImg, player.getX() - camera.getOffsetX(), player.getY() - camera.getOffsetY(), player.getWidth(), player.getHeight(), this);
+        } else {
+            // Dibuja un rectángulo si la imagen del jugador es nula (debug visual)
+            g2d.setColor(Color.RED);
+            g2d.fillRect(player.getX() - camera.getOffsetX(), player.getY() - camera.getOffsetY(), player.getWidth(), player.getHeight());
+        }
+
         g2d.dispose();
+    }
+
+    private void drawTileMap(Graphics2D g2d) {
+        int tileSize = tileMap.getTileSize();
+        int[][] tiles = tileMap.getTiles();
+        for (int row = 0; row < tiles.length; row++) {
+            int cols = tiles[row].length;
+            for (int col = 0; col < cols; col++) {
+                int tileType = tiles[row][col];
+                switch (tileType) {
+                    case 0:
+                        g2d.setColor(new Color(200, 200, 200));
+                        break;
+                    case 1:
+                        g2d.setColor(Color.DARK_GRAY);
+                        break;
+                    case 2:
+                        g2d.setColor(Color.BLUE);
+                        break;
+                    case 3:
+                        g2d.setColor(Color.GREEN);
+                        break;
+                    case 4:
+                        g2d.setColor(Color.MAGENTA);
+                        break;
+                    default:
+                        g2d.setColor(Color.BLACK);
+                        break;
+                }
+                g2d.fillRect(col * tileSize, row * tileSize, tileSize, tileSize);
+                g2d.setColor(Color.BLACK);
+                g2d.drawRect(col * tileSize, row * tileSize, tileSize, tileSize);
+            }
+        }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        player.update();
-        repaint(); // Repinta GamePanel
-        // Repinta el JLayeredPane completo
+        int oldX = player.getX();
+        int oldY = player.getY();
+
+        player.update(); // El jugador actualiza su propia posición (x,y).
+
+        // Primero comprobar colisión vertical claramente
+        Rectangle feetRect = player.getFeetRectangle();
+        if (player.getDy() >= 0 && collisionManager.isColliding(feetRect)) {
+            int tileSize = tileMap.getTileSize();
+            int collisionRow = (feetRect.y + feetRect.height) / tileSize;
+
+            int newY = collisionRow * tileSize - player.getHeight();
+            player.setPosition(player.getX(), newY);
+            player.resetVerticalMotion();
+        }
+
+        // Luego comprobar colisión lateral claramente (por separado)
+        Rectangle collisionRect = player.getCollisionRectangle();
+        if (collisionManager.isColliding(collisionRect)) {
+            player.setPosition(oldX, player.getY());
+            player.stop();
+        }
+
+        repaint();
+
         Object ancestor = SwingUtilities.getAncestorOfClass(PrinciPanel.class, this);
         if (ancestor instanceof PrinciPanel) {
             ((PrinciPanel) ancestor).repaintAll();
         }
     }
 
+
+
+
     @Override
     public void keyPressed(KeyEvent e) {
         int key = e.getKeyCode();
-        switch(key) {
+        switch (key) {
             case KeyEvent.VK_A:
             case KeyEvent.VK_LEFT:
                 player.moveLeft();
@@ -92,7 +201,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     @Override
     public void keyReleased(KeyEvent e) {
         int key = e.getKeyCode();
-        switch(key) {
+        switch (key) {
             case KeyEvent.VK_A:
             case KeyEvent.VK_LEFT:
             case KeyEvent.VK_D:
@@ -108,12 +217,4 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void keyTyped(KeyEvent e) { }
-
-    public Player getPlayer() {
-        return player;
-    }
-
-    public Camera getCamera() {
-        return camera;
-    }
 }
