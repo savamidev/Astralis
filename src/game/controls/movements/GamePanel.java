@@ -6,6 +6,7 @@ import game.collision.CollisionManager;
 import game.audio.BackgroundSound;
 import game.objects.Collectible;
 import game.objects.Collectible.Type;
+import game.objects.PortalNPC;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -24,39 +25,36 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private TileMap tileMap;
     private CollisionManager collisionManager;
     private Image backgroundImage;
-    // Dimensiones del mundo
     private int worldWidth = 3000;
     private int worldHeight = 1080;
-    private final boolean debugMode = false;
+    private final boolean debugMode = true;
 
-    // Fondo musical
     private BackgroundSound backgroundSound;
-
-    // Coleccionables en el juego
     private List<Collectible> collectibles;
 
-    // Variables para el mensaje al recoger un objeto
     private String collectibleMessage = null;
     private long collectibleMessageStartTime;
     private final int COLLECTIBLE_MESSAGE_DURATION = 2000; // 2 segundos
 
-    // Variables para el overlay de instrucciones
     private boolean showInstructions = true;
     private long instructionStartTime;
     private final int INSTRUCTION_DURATION = 10000; // 10 segundos
-    private final int FADE_IN_DURATION = 2000;  // 2 segundos
-    private final int VISIBLE_DURATION = 6000;  // 6 segundos visibles
-    private final int FADE_OUT_DURATION = 2000; // 2 segundos fade out
+    private final int FADE_IN_DURATION = 2000;        // 2 segundos
+    private final int VISIBLE_DURATION = 6000;         // 6 segundos
+    private final int FADE_OUT_DURATION = 2000;        // 2 segundos
 
-    // Overlay images y sus posiciones
     private Image instructionsOverlayImg;
     private Image collectibleOverlayImg;
     private int instructionsOverlayX, instructionsOverlayY;
     private int collectibleOverlayX, collectibleOverlayY;
 
-    /**
-     * Constructor que inicializa el panel de juego, el fondo, el jugador, la cámara, los coleccionables y el overlay de instrucciones.
-     */
+    // Variables para el NPC
+    private PortalNPC portalNpc;
+    // Para gestionar la transición al siguiente nivel (solo cuando se tiene la llave)
+    private boolean portalActivated = false;
+    private long portalMessageStartTime;
+    private final long PORTAL_MESSAGE_DURATION = 5000; // 5 segundos
+
     public GamePanel() {
         setPreferredSize(new Dimension(1920, 1080));
         setOpaque(false);
@@ -81,16 +79,16 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             System.err.println("No se encontró el fondo en /resources/fondoS4.png");
         }
 
-        // Iniciar fondo musical con fade-in
         backgroundSound = new BackgroundSound("/resources/sound/background/background.wav");
         backgroundSound.playWithFadeIn();
 
-        // Inicializar coleccionables con coordenadas por defecto
         collectibles = new ArrayList<>();
         collectibles.add(new Collectible(Type.SANDIA, 500, 600, 70, 70, "/resources/imagen/collect/sandia.png"));
         collectibles.add(new Collectible(Type.LLAVE, 1300, 500, 70, 70, "/resources/imagen/collect/llave.png"));
 
-        // Cargar imágenes de overlay para instrucciones y mensaje de colección
+        // Inicialización del NPC en la posición deseada
+        portalNpc = new PortalNPC(2500, 600, 100, 100, "/resources/imagen/npc/guard.gif");
+
         URL instructionsUrl = getClass().getResource("/resources/imagen/overlays/instructions.png");
         if (instructionsUrl != null) {
             instructionsOverlayImg = new ImageIcon(instructionsUrl).getImage();
@@ -104,9 +102,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             System.err.println("No se encontró la imagen de mensaje de colección en /resources/imagen/overlays/collectible.png");
         }
 
-        // Iniciar el overlay de instrucciones
         instructionStartTime = System.currentTimeMillis();
-
         timer = new Timer(16, this);
         timer.start();
     }
@@ -126,12 +122,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         int offsetY = camera.getOffsetY();
         g2d.translate(-offsetX, -offsetY);
 
-        // Dibuja el fondo
         if (backgroundImage != null) {
             g2d.drawImage(backgroundImage, 0, 0, worldWidth, worldHeight, this);
         }
 
-        // Si está en modo debug, dibuja el TileMap
         if (debugMode) {
             Composite originalComposite = g2d.getComposite();
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
@@ -139,12 +133,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             g2d.setComposite(originalComposite);
         }
 
-        // Dibuja los coleccionables
         for (Collectible col : collectibles) {
             col.draw(g2d);
         }
 
-        // Dibuja al jugador
         Image playerImg = player.getImage();
         if (playerImg != null) {
             g2d.drawImage(playerImg, player.getX(), player.getY(), player.getWidth(), player.getHeight(), this);
@@ -153,9 +145,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             g2d.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
         }
 
-        // Dibuja los overlays (mensaje de colección e instrucciones)
-        drawOverlayMessages(g2d);
+        // Dibujar el NPC (incluye su mensaje si se ha activado)
+        portalNpc.draw(g2d, player.getPlayerState().hasLlave());
 
+        drawOverlayMessages(g2d);
         g2d.dispose();
     }
 
@@ -197,17 +190,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     public void actionPerformed(ActionEvent e) {
         int oldX = player.getX();
         int oldY = player.getY();
-
         player.update();
 
-        // Actualizar la posición de cada coleccionable para el efecto de oscilación
         for (Collectible col : collectibles) {
             if (!col.isCollected()) {
                 col.update();
             }
         }
 
-        // Colisión con techo (cabeza)
+        // Colisión con la cabeza
         if (player.getDy() < 0) {
             Rectangle headRect = player.getHeadRectangle();
             if (collisionManager.isColliding(headRect)) {
@@ -219,7 +210,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
         }
 
-        // Colisión con pies
+        // Colisión con los pies
         Rectangle feetRect = player.getFeetRectangle();
         if (player.getDy() >= 0 && collisionManager.isColliding(feetRect)) {
             int tileSize = tileMap.getTileSize();
@@ -252,10 +243,34 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
         }
 
+        // Verificar colisión con el NPC
+        if (player.getCollisionRectangle().intersects(portalNpc.getBounds())) {
+            // Al acercarse, activar el mensaje (cada vez que se detecte la colisión)
+            portalNpc.triggerMessage();
+            // Si el jugador tiene la llave, iniciar el contador para pasar al siguiente nivel
+            if (player.getPlayerState().hasLlave() && !portalActivated) {
+                portalActivated = true;
+                portalMessageStartTime = System.currentTimeMillis();
+            }
+        } else {
+            // Si el jugador se aleja, se reinicia la activación para que el mensaje se dispare de nuevo al acercarse
+            portalActivated = false;
+        }
+
+        // Si se ha activado la transición y han pasado 5 segundos, cargar el siguiente nivel
+        if (portalActivated && player.getPlayerState().hasLlave()) {
+            if (System.currentTimeMillis() - portalMessageStartTime >= PORTAL_MESSAGE_DURATION) {
+                Object ancestor = SwingUtilities.getAncestorOfClass(game.panlesBBDD.stageOne.PrinciPanel.class, this);
+                if (ancestor instanceof game.panlesBBDD.stageOne.PrinciPanel) {
+                    ((game.panlesBBDD.stageOne.PrinciPanel) ancestor).loadNextLevel(player.getPlayerState());
+                }
+            }
+        }
+
         repaint();
-        Object ancestor = SwingUtilities.getAncestorOfClass(PrinciPanel.class, this);
-        if (ancestor instanceof PrinciPanel) {
-            ((PrinciPanel) ancestor).repaintAll();
+        Object ancestor = SwingUtilities.getAncestorOfClass(game.panlesBBDD.stageOne.PrinciPanel.class, this);
+        if (ancestor instanceof game.panlesBBDD.stageOne.PrinciPanel) {
+            ((game.panlesBBDD.stageOne.PrinciPanel) ancestor).repaintAll();
         }
     }
 
@@ -275,14 +290,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
     }
 
-    /**
-     * Dibuja los overlays: mensaje de colección e instrucciones.
-     * @param g2d Objeto Graphics2D.
-     */
     private void drawOverlayMessages(Graphics2D g2d) {
         long currentTime = System.currentTimeMillis();
 
-        // Overlay de mensaje de colección
+        // Overlay para mensaje de colección
         if (collectibleMessage != null) {
             if (currentTime - collectibleMessageStartTime >= COLLECTIBLE_MESSAGE_DURATION) {
                 collectibleMessage = null;

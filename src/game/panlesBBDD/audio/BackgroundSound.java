@@ -4,18 +4,28 @@ import javax.sound.sampled.*;
 import java.net.URL;
 
 /**
- * Gestiona el sonido de fondo del juego con efecto fade-in.
+ * Gestiona el sonido de fondo del juego aplicando un efecto fade-in.
+ * <p>
+ * Esta clase carga un clip de audio desde un recurso y lo reproduce en bucle,
+ * incrementando gradualmente el volumen desde un nivel mínimo hasta el máximo.
+ * </p>
  */
 public class BackgroundSound {
     private Clip clip;
     private FloatControl gainControl;
-    private final float MAX_GAIN = 0.0f; // Volumen máximo en decibeles
-    private final float MIN_GAIN = -40.0f; // Volumen inicial (mínimo)
-    private final float GAIN_STEP = 1.0f;  // Incremento en cada paso
-    private final int FADE_INTERVAL = 200; // Intervalo entre pasos en milisegundos
+
+    /** Volumen máximo en decibeles. */
+    private final float MAX_GAIN = 0.0f;
+    /** Volumen inicial (mínimo) en decibeles. */
+    private final float MIN_GAIN = -40.0f;
+    /** Incremento de volumen en cada paso del fade. */
+    private final float GAIN_STEP = 1.0f;
+    /** Intervalo en milisegundos entre cada incremento del fade. */
+    private final int FADE_INTERVAL = 200;
 
     /**
-     * Constructor que carga el clip de audio desde la ruta especificada.
+     * Crea una instancia de BackgroundSound cargando el clip de audio desde la ruta especificada.
+     *
      * @param path Ruta del recurso de audio (por ejemplo, "/resources/sound/background.wav").
      */
     public BackgroundSound(String path) {
@@ -28,6 +38,7 @@ public class BackgroundSound {
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(url);
             clip = AudioSystem.getClip();
             clip.open(audioStream);
+            // Obtiene el control de ganancia para ajustar el volumen.
             gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
             gainControl.setValue(MIN_GAIN);
         } catch(Exception e) {
@@ -36,7 +47,11 @@ public class BackgroundSound {
     }
 
     /**
-     * Inicia la reproducción en bucle del sonido de fondo aplicando un efecto fade-in.
+     * Inicia la reproducción en bucle del sonido de fondo con efecto fade-in.
+     * <p>
+     * El método inicia el loop continuo del clip y en un hilo separado incrementa el volumen
+     * gradualmente desde el mínimo hasta alcanzar el máximo.
+     * </p>
      */
     public void playWithFadeIn() {
         if (clip == null) {

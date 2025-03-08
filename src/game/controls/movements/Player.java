@@ -7,6 +7,10 @@ import java.net.URL;
 
 /**
  * Representa al jugador y gestiona sus movimientos, animaciones y acciones (como salto y dash).
+ * <p>
+ * La clase maneja la posición, velocidad, animaciones y sonidos asociados a las acciones
+ * del jugador, permitiendo moverlo e interactuar con el entorno.
+ * </p>
  */
 public class Player {
     private enum State {IDLE, WALKING_LEFT, WALKING_RIGHT, JUMPING_LEFT, JUMPING_RIGHT, FALLING}
@@ -26,7 +30,7 @@ public class Player {
     private AnimationPlayer currentAnimation;
 
     private final int SPEED = 5;
-    private final int JUMP_STRENGTH = -30; // negativo para subir
+    private final int JUMP_STRENGTH = -30; // Valor negativo para subir.
     private final double GRAVITY = 2;
     private final int TERMINAL_VELOCITY = 20;
     private int floorY;
@@ -42,21 +46,22 @@ public class Player {
     private static final int COUNT_FALL = 4;
     private static final long FRAME_DELAY = 250;
 
-    // Campos para el audio
+    // Campos para el audio.
     private Clip walkingClip;
     private Clip jumpClip;
 
-    // Campos para dash (habilitado al tener la sandía)
+    // Campos para dash (habilitado si el jugador posee la sandía).
     private boolean dashing = false;
     private long dashStartTime = 0;
-    private final int DASH_DURATION = 200; // duración en milisegundos
-    private final int DASH_SPEED = 20;     // velocidad del dash
+    private final int DASH_DURATION = 200; // Duración en milisegundos.
+    private final int DASH_SPEED = 20;     // Velocidad del dash.
 
     /**
-     * Constructor que inicializa el jugador, sus animaciones y su posición inicial.
-     * @param startX Posición inicial en X.
-     * @param floorY Posición Y del suelo.
-     * @param worldWidth Ancho del mundo.
+     * Crea una instancia de Player con su posición inicial, el suelo y el ancho del mundo.
+     *
+     * @param startX     Posición inicial en X.
+     * @param floorY     Posición Y del suelo.
+     * @param worldWidth Ancho total del mundo.
      */
     public Player(int startX, int floorY, int worldWidth) {
         this.x = startX;
@@ -86,6 +91,15 @@ public class Player {
         this.y = floorY - height;
     }
 
+    /**
+     * Carga un conjunto de imágenes para la animación a partir de una ruta base.
+     *
+     * @param basePath Ruta base de las imágenes.
+     * @param count    Número de imágenes a cargar.
+     * @param newWidth Nuevo ancho para escalar las imágenes.
+     * @param newHeight Nuevo alto para escalar las imágenes.
+     * @return Array de imágenes escaladas.
+     */
     private Image[] loadAnimationImages(String basePath, int count, int newWidth, int newHeight) {
         Image[] frames = new Image[count];
         for (int i = 1; i <= count; i++) {
@@ -100,6 +114,9 @@ public class Player {
         return frames;
     }
 
+    /**
+     * Actualiza el estado actual del jugador y selecciona la animación correspondiente.
+     */
     private void updateState() {
         if (jumping) {
             if (dx < 0) currentState = State.JUMPING_LEFT;
@@ -131,7 +148,12 @@ public class Player {
         }
     }
 
-    // Método para cargar un Clip desde un recurso
+    /**
+     * Carga un clip de audio desde un recurso.
+     *
+     * @param path Ruta del recurso de audio.
+     * @return El clip cargado o {@code null} si no se pudo cargar.
+     */
     private Clip loadClip(String path) {
         try {
             URL url = getClass().getResource(path);
@@ -149,7 +171,9 @@ public class Player {
         }
     }
 
-    // Métodos para manejar el sonido al caminar
+    /**
+     * Inicia la reproducción del sonido de caminar en bucle.
+     */
     private void startWalkingSound() {
         if (walkingClip == null) {
             walkingClip = loadClip("/resources/sound/personaje/paso.wav");
@@ -160,32 +184,51 @@ public class Player {
         }
     }
 
+    /**
+     * Detiene el sonido de caminar.
+     */
     private void stopWalkingSound() {
         if (walkingClip != null && walkingClip.isActive()) {
             walkingClip.stop();
         }
     }
 
+    /**
+     * Mueve al jugador hacia la izquierda y reproduce el sonido de caminar.
+     */
     public void moveLeft() {
         dx = -SPEED;
         startWalkingSound();
     }
 
+    /**
+     * Mueve al jugador hacia la derecha y reproduce el sonido de caminar.
+     */
     public void moveRight() {
         dx = SPEED;
         startWalkingSound();
     }
 
+    /**
+     * Detiene el movimiento horizontal y el sonido de caminar.
+     */
     public void stop() {
         dx = 0;
         stopWalkingSound();
     }
 
+    /**
+     * Método para mover al jugador hacia abajo (sin implementación).
+     */
     public void moveDown() { }
+
+    /**
+     * Método para detener el movimiento hacia abajo del jugador (sin implementación).
+     */
     public void stopDown() { }
 
     /**
-     * Realiza un salto; si se posee la sandía se permite un doble salto.
+     * Realiza un salto. Permite un doble salto si el jugador posee la sandía.
      */
     public void jump() {
         int availableJumps = state.hasSandia() ? 2 : 1;
@@ -204,7 +247,9 @@ public class Player {
         }
     }
 
-    // Método auxiliar para reproducir el sonido de aterrizaje (one-shot)
+    /**
+     * Reproduce el sonido de aterrizaje cuando el jugador finaliza un salto.
+     */
     private void playLandingSound() {
         try {
             URL url = getClass().getResource("/resources/sound/personaje/landing.wav");
@@ -222,7 +267,11 @@ public class Player {
     }
 
     /**
-     * Actualiza el estado, posición y animación del jugador, así como el dash si está activo.
+     * Actualiza la posición, el estado y la animación del jugador.
+     * <p>
+     * Se aplican la gravedad y se gestionan las colisiones con el suelo,
+     * además de controlar la duración del dash.
+     * </p>
      */
     public void update() {
         updateState();
@@ -246,18 +295,19 @@ public class Player {
             currentJumpCount = 0;
         }
 
-        // Procesar dash: si ha pasado la duración, se termina el dash
+        // Procesa el dash: si ha pasado la duración, se finaliza.
         if (dashing && System.currentTimeMillis() - dashStartTime >= DASH_DURATION) {
             dashing = false;
             dx = 0;
             System.out.println("Dash finalizado.");
         }
 
+        // Limita la posición horizontal dentro del mundo.
         x = Math.max(0, Math.min(x, worldWidth - width));
     }
 
     /**
-     * Ejecuta un dash horizontal si el jugador tiene la sandía.
+     * Ejecuta un dash horizontal si el jugador posee la sandía.
      */
     public void dash() {
         if (!state.hasSandia()) {
@@ -276,14 +326,28 @@ public class Player {
         }
     }
 
+    /**
+     * Obtiene el área de colisión del cuerpo del jugador (para colisiones laterales).
+     * <p>
+     * Se ha modificado para desplazar la hitbox hacia abajo y reducirla en altura, de modo que
+     * la parte superior (menos relevante para las colisiones laterales) no interfiera.
+     * </p>
+     *
+     * @return Un rectángulo que representa la hitbox del jugador.
+     */
     public Rectangle getCollisionRectangle() {
         int hitboxWidth = width / 3;
-        int hitboxHeight = height - 10;
+        int hitboxHeight = height - 40; // Se reduce la altura de la hitbox
         int hitboxX = x + (width - hitboxWidth) / 2;
-        int hitboxY = y + (height - hitboxHeight) / 2;
+        int hitboxY = y + 40;          // Se desplaza 40 píxeles hacia abajo
         return new Rectangle(hitboxX, hitboxY, hitboxWidth, hitboxHeight);
     }
 
+    /**
+     * Obtiene el área de colisión de los pies del jugador, para detectar colisiones con el suelo.
+     *
+     * @return Un rectángulo que representa el área de los pies.
+     */
     public Rectangle getFeetRectangle() {
         int feetWidth = width / 2;
         int feetHeight = 5;
@@ -293,35 +357,98 @@ public class Player {
     }
 
     /**
-     * Devuelve el área de colisión de la cabeza del jugador.
-     * @return Rectángulo correspondiente.
+     * Obtiene el área de colisión de la cabeza del jugador (para detectar colisiones al saltar).
+     * <p>
+     * Se ha modificado para reducirla drásticamente: el ancho es de 1/4 del total, la altura es de 1 píxel
+     * y se posiciona 20 píxeles por debajo del borde superior.
+     * </p>
+     *
+     * @return Un rectángulo que representa el área de la cabeza.
      */
     public Rectangle getHeadRectangle() {
-        int headWidth = width / 2;
-        int headHeight = 5;
+        int headWidth = width / 4; // Reducción del ancho a 1/4 del total
+        int headHeight = 1;        // Altura de 1 píxel
         int headX = x + (width - headWidth) / 2;
-        int headY = y;
+        int headY = y + 20;        // Se desplaza 20 píxeles hacia abajo
         return new Rectangle(headX, headY, headWidth, headHeight);
     }
 
+    /**
+     * Obtiene el ancho del jugador.
+     *
+     * @return El ancho.
+     */
     public int getWidth() { return width; }
+
+    /**
+     * Obtiene la altura del jugador.
+     *
+     * @return La altura.
+     */
     public int getHeight() { return height; }
+
+    /**
+     * Establece la posición del jugador.
+     *
+     * @param newX Nueva coordenada en X.
+     * @param newY Nueva coordenada en Y.
+     */
     public void setPosition(int newX, int newY) {
         this.x = newX;
         this.y = newY;
     }
+
+    /**
+     * Obtiene la posición en X del jugador.
+     *
+     * @return La coordenada X.
+     */
     public int getX() { return x; }
+
+    /**
+     * Obtiene la posición en Y del jugador.
+     *
+     * @return La coordenada Y.
+     */
     public int getY() { return y; }
+
+    /**
+     * Obtiene la imagen actual del jugador según la animación en curso.
+     *
+     * @return La imagen del frame actual o {@code null} si no hay animación.
+     */
     public Image getImage() {
         return (currentAnimation != null) ? currentAnimation.getCurrentFrame() : null;
     }
+
+    /**
+     * Obtiene el estado actual del jugador.
+     *
+     * @return Una instancia de {@link PlayerState} con la información del jugador.
+     */
     public PlayerState getPlayerState() { return state; }
+
+    /**
+     * Obtiene la velocidad vertical actual del jugador.
+     *
+     * @return La velocidad en el eje Y.
+     */
     public int getDy() { return dy; }
+
+    /**
+     * Reinicia el movimiento vertical del jugador, usado al aterrizar.
+     */
     public void resetVerticalMotion() {
         dy = 0;
         jumping = false;
         currentJumpCount = 0;
     }
+
+    /**
+     * Obtiene la velocidad horizontal actual del jugador.
+     *
+     * @return La velocidad en el eje X.
+     */
     public int getDx() {
         return dx;
     }

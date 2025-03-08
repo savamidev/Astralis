@@ -12,15 +12,16 @@ import java.awt.*;
 import java.io.File;
 
 /**
- * Clase VideoIntro
- *
- * Esta clase utiliza JavaFX para reproducir un video dentro de una aplicación Swing.
- * Se usa JFXPanel para integrar JavaFX en Swing y mostrar un video en pantalla completa.
+ * Reproduce un video dentro de una aplicación Swing utilizando JavaFX.
+ * <p>
+ * La clase utiliza un {@code JFXPanel} para integrar JavaFX en Swing, creando una escena
+ * que muestra el video. Al finalizar la reproducción, se transita al panel del juego.
+ * </p>
  */
 public class VideoIntro extends JFXPanel {
-    private MediaPlayer mediaPlayer;  // Objeto para controlar la reproducción del video.
-    private CardLayout outerLayout;   // Layout externo para cambiar entre pantallas.
-    private JPanel outerContainer;    // Contenedor externo donde se encuentran los paneles.
+    private MediaPlayer mediaPlayer;  // Controla la reproducción del video.
+    private CardLayout outerLayout;   // Layout externo para cambiar entre paneles.
+    private JPanel outerContainer;    // Contenedor que gestiona los paneles de la aplicación.
 
     static {
         // Inicializa JavaFX una única vez en toda la aplicación.
@@ -28,44 +29,46 @@ public class VideoIntro extends JFXPanel {
     }
 
     /**
-     * Constructor de VideoIntro.
+     * Crea una instancia de VideoIntro.
      *
-     * @param outerLayout    CardLayout externo para la gestión de pantallas.
-     * @param outerContainer Contenedor donde se agregarán los paneles de la aplicación.
+     * @param outerLayout    CardLayout externo para la gestión de paneles.
+     * @param outerContainer Contenedor donde se agregarán los paneles.
      */
     public VideoIntro(CardLayout outerLayout, JPanel outerContainer) {
         this.outerLayout = outerLayout;
         this.outerContainer = outerContainer;
-        setPreferredSize(new Dimension(1920, 1080)); // Define el tamaño del panel de video.
+        setPreferredSize(new Dimension(1920, 1080));
     }
 
     /**
-     * Método para reproducir el video.
+     * Inicia la reproducción del video.
+     * <p>
+     * El método carga el video desde un recurso, configura la escena de JavaFX y
+     * reproduce el video. Cuando finaliza, se detiene la reproducción y se transita
+     * al panel del juego (PrinciPanel) de forma segura en el hilo Swing.
+     * </p>
      */
     public void play() {
-        Platform.runLater(() -> { // Ejecuta en el hilo de JavaFX.
-            // Carga el archivo de video desde la carpeta de recursos.
-            String videoPath = new File("src/resources/video.mp4").toURI().toString();
+        Platform.runLater(() -> {
+            String videoPath = new File("src/resources/videos/videoHistoria.mp4").toURI().toString();
             Media media = new Media(videoPath);
             mediaPlayer = new MediaPlayer(media);
             MediaView mediaView = new MediaView(mediaPlayer);
 
-            // Ajusta el tamaño del video para ocupar toda la pantalla.
+            // Ajusta el video para ocupar toda la pantalla.
             mediaView.setFitWidth(1920);
             mediaView.setFitHeight(1080);
-            mediaView.setPreserveRatio(true); // Mantiene la relación de aspecto.
+            mediaView.setPreserveRatio(true);
 
-            // Crea un contenedor StackPane y agrega el video.
             StackPane root = new StackPane();
             root.getChildren().add(mediaView);
             Scene scene = new Scene(root, 1920, 1080);
-            setScene(scene); // Establece la escena en el JFXPanel.
+            setScene(scene);
 
-            // Cuando el video termina, regresa al panel de la introducción.
+            // Al finalizar el video, detiene la reproducción y transita al panel del juego.
             mediaPlayer.setOnEndOfMedia(() -> {
-                Platform.runLater(() -> {
-                    mediaPlayer.stop(); // Detiene la reproducción.
-                    // Verifica si el PrinciPanel ya está agregado; si no, lo crea y agrega.
+                mediaPlayer.stop();
+                SwingUtilities.invokeLater(() -> {
                     boolean existePrinciPanel = false;
                     for (Component comp : outerContainer.getComponents()) {
                         if (comp instanceof game.panlesBBDD.stageOne.PrinciPanel) {
@@ -81,8 +84,7 @@ public class VideoIntro extends JFXPanel {
                 });
             });
 
-
-            mediaPlayer.play(); // Inicia la reproducción del video.
+            mediaPlayer.play();
         });
     }
 }

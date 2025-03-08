@@ -6,26 +6,26 @@ import java.awt.*;
 import java.awt.event.*;
 
 /**
- * Clase MenuPanel
- *
- * Este panel representa el menú principal del juego, proporcionando botones
- * para iniciar el juego o salir de la aplicación. Los botones se muestran como imágenes
- * y se pueden mover libremente arrastrándolos.
+ * Representa el menú principal del juego.
+ * <p>
+ * Este panel muestra botones (como START y EXIT) mediante imágenes y permite moverlos
+ * mediante arrastre. Además, se encarga de la transición al panel de video al iniciar el juego.
+ * </p>
  */
 public class MenuPanel extends JPanel {
-    private final CardLayout innerLayout;   // Layout interno para manejar la transición entre el título y el menú.
-    private final JPanel introContainer;    // Contenedor del panel de la introducción.
-    private final IntroAudio introAudio;    // Controlador de audio de la introducción.
-    private final CardLayout outerLayout;   // Layout externo para gestionar el cambio de paneles globalmente.
-    private final JPanel outerContainer;    // Contenedor principal de la aplicación.
+    private final CardLayout innerLayout;   // Layout interno para la transición entre título y menú.
+    private final JPanel introContainer;      // Contenedor de los paneles de introducción.
+    private final IntroAudio introAudio;      // Controlador de audio de introducción.
+    private final CardLayout outerLayout;     // Layout externo para gestionar el cambio de paneles.
+    private final JPanel outerContainer;      // Contenedor principal de la aplicación.
 
     /**
-     * Constructor de MenuPanel.
+     * Crea una instancia de MenuPanel con las dependencias necesarias.
      *
-     * @param innerLayout   CardLayout interno para la transición entre los paneles de la introducción.
-     * @param introContainer Contenedor que maneja los paneles de la introducción.
-     * @param introAudio    Instancia de IntroAudio para controlar la música de fondo.
-     * @param outerLayout   CardLayout externo para la gestión global de paneles.
+     * @param innerLayout    CardLayout interno para la transición.
+     * @param introContainer Contenedor de los paneles de introducción.
+     * @param introAudio     Instancia de IntroAudio para controlar la música.
+     * @param outerLayout    CardLayout externo para el cambio global de paneles.
      * @param outerContainer Contenedor principal de la aplicación.
      */
     public MenuPanel(CardLayout innerLayout, JPanel introContainer, IntroAudio introAudio,
@@ -36,34 +36,31 @@ public class MenuPanel extends JPanel {
         this.outerLayout = outerLayout;
         this.outerContainer = outerContainer;
 
-        // Usar layout nulo para posicionamiento absoluto
+        // Se utiliza un layout nulo para posicionamiento absoluto.
         setLayout(null);
-        setOpaque(false); // Fondo transparente
+        setOpaque(false);
 
-        // Cargar imágenes para los botones
-        // Reemplaza "ruta/a/tu/imagen_start.png" y "ruta/a/tu/imagen_exit.png" por las rutas correctas de tus imágenes.
-        ImageIcon startIcon = new ImageIcon("src/resources/next01.png");
-        ImageIcon exitIcon = new ImageIcon("ruta/a/tu/imagen_exit.png");
+        // Carga las imágenes para los botones.
+        ImageIcon startIcon = new ImageIcon("src/resources/imagen/start.png");
+        ImageIcon exitIcon = new ImageIcon("ruta/a/tu/imagen_exit.png"); // Asegúrate de actualizar esta ruta.
 
-        // Crear botón START con imagen
+        // Crea y configura el botón START.
         JButton startButton = new JButton(startIcon);
-        // Establecer posición y tamaño basado en la imagen
+        startButton.setContentAreaFilled(false);
+        startButton.setBorderPainted(false);
+        startButton.setFocusPainted(false);
         startButton.setBounds(900, 500, startIcon.getIconWidth(), startIcon.getIconHeight());
         add(startButton);
 
-        // Crear botón EXIT con imagen
+        // Crea y configura el botón EXIT.
         JButton exitButton = new JButton(exitIcon);
         exitButton.setBounds(100, 200, exitIcon.getIconWidth(), exitIcon.getIconHeight());
         add(exitButton);
 
-        // Hacer que los botones se puedan mover arrastrándolos (opcional)
-        makeDraggable(startButton);
-        makeDraggable(exitButton);
-
-        // Acción del botón EXIT: cierra la aplicación
+        // Acción del botón EXIT: cierra la aplicación.
         exitButton.addActionListener(e -> System.exit(0));
 
-        // Acción del botón START: cambia al panel de video y detiene la música de la introducción.
+        // Acción del botón START: detiene el audio de introducción y transita al panel de video.
         startButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -78,10 +75,12 @@ public class MenuPanel extends JPanel {
     }
 
     /**
-     * Método auxiliar para hacer un componente draggable (móvil mediante arrastre).
+     * Hace que un componente sea draggable (móvil mediante arrastre).
+     * <p>
      * Si no se desea esta funcionalidad, se pueden eliminar las llamadas a este método.
+     * </p>
      *
-     * @param comp El componente que se desea hacer movable.
+     * @param comp El componente que se desea hacer movible.
      */
     private void makeDraggable(JComponent comp) {
         MouseAdapter ma = new MouseAdapter() {
@@ -92,15 +91,15 @@ public class MenuPanel extends JPanel {
             }
             @Override
             public void mouseDragged(MouseEvent e) {
-                // Obtener la ubicación actual del componente
+                // Obtiene la ubicación actual del componente.
                 int thisX = comp.getLocation().x;
                 int thisY = comp.getLocation().y;
 
-                // Calcular la diferencia entre la posición actual y la inicial
+                // Calcula la diferencia entre la posición actual y la inicial.
                 int xMoved = e.getX() - initialClick.x;
                 int yMoved = e.getY() - initialClick.y;
 
-                // Establecer la nueva ubicación
+                // Establece la nueva ubicación.
                 int X = thisX + xMoved;
                 int Y = thisY + yMoved;
                 comp.setLocation(X, Y);

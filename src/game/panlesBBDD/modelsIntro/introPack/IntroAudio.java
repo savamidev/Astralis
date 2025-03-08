@@ -5,35 +5,34 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Clase IntroAudio
- *
- * Esta clase gestiona la reproducción de un archivo de audio en bucle continuo.
- * Utiliza la API javax.sound.sampled para cargar, reproducir y detener un audio.
+ * Gestiona la reproducción de audio para la introducción del juego.
+ * <p>
+ * Utiliza la API {@code javax.sound.sampled} para cargar, reproducir y detener
+ * el audio de introducción en bucle continuo.
+ * </p>
  */
 public class IntroAudio {
     private Clip clip; // Objeto Clip que almacena y reproduce el audio.
 
     /**
-     * Constructor de IntroAudio.
+     * Crea una instancia de IntroAudio cargando el archivo de audio especificado.
      *
      * @param audioFilePath Ruta del archivo de audio a reproducir.
      */
     public IntroAudio(String audioFilePath) {
         try {
-            File audioFile = new File(audioFilePath); // Carga el archivo de audio desde el sistema de archivos.
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile); // Convierte el archivo en un flujo de audio.
-
-            clip = AudioSystem.getClip(); // Obtiene un objeto Clip para reproducir el audio.
-            clip.open(audioStream); // Carga el flujo de audio en el Clip.
-            clip.loop(Clip.LOOP_CONTINUOUSLY); // Configura el Clip para reproducirse en bucle infinito.
+            File audioFile = new File(audioFilePath); // Carga el archivo desde el sistema de archivos.
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile);
+            clip = AudioSystem.getClip();
+            clip.open(audioStream);
+            clip.loop(Clip.LOOP_CONTINUOUSLY); // Reproducción en bucle infinito.
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
-            e.printStackTrace(); // Maneja posibles excepciones (archivo no compatible, error de I/O o línea de audio no disponible).
+            e.printStackTrace();
         }
     }
 
     /**
-     * Método para detener la reproducción del audio.
-     * Verifica si el Clip no es nulo y está en ejecución antes de detenerlo.
+     * Detiene la reproducción del audio, si está en ejecución.
      */
     public void stop() {
         if (clip != null && clip.isRunning()) {
@@ -42,8 +41,7 @@ public class IntroAudio {
     }
 
     /**
-     * Método para iniciar la reproducción del audio.
-     * Si el Clip no es nulo y no está en ejecución, lo inicia.
+     * Inicia la reproducción del audio, si no está ya en ejecución.
      */
     public void start() {
         if (clip != null && !clip.isRunning()) {

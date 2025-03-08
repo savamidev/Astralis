@@ -7,13 +7,26 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Representa el mapa de tiles del juego.
+ * <p>
+ * Esta clase carga un mapa desde un archivo CSV o, en caso de no encontrarse el archivo,
+ * genera un mapa por defecto. Proporciona métodos para obtener información sobre los tiles,
+ * como su tamaño y tipo en una posición determinada.
+ * </p>
+ */
 public class TileMap {
     private int[][] tiles;
     private int tileSize;
     private int worldWidth;
     private int worldHeight;
 
-    // Constructor que carga el mapa desde un archivo CSV
+    /**
+     * Crea un TileMap a partir de un archivo CSV.
+     *
+     * @param csvFilePath Ruta del archivo CSV que define el mapa.
+     * @param tileSize    Tamaño de cada tile en píxeles.
+     */
     public TileMap(String csvFilePath, int tileSize) {
         this.tileSize = tileSize;
         InputStream is = getClass().getResourceAsStream(csvFilePath);
@@ -46,7 +59,9 @@ public class TileMap {
         }
     }
 
-    // Crea un mapa por defecto de 75 columnas x 27 filas (3000 x 1080)
+    /**
+     * Crea un mapa por defecto de 75 columnas x 27 filas (3000 x 1080).
+     */
     private void createDefaultMap() {
         int columns = 75;
         int rows = 27;
@@ -64,15 +79,31 @@ public class TileMap {
         worldHeight = rows * tileSize;
     }
 
+    /**
+     * Obtiene el tamaño de cada tile.
+     *
+     * @return El tamaño de los tiles en píxeles.
+     */
     public int getTileSize() {
         return tileSize;
     }
 
+    /**
+     * Obtiene la matriz de tiles.
+     *
+     * @return Matriz de enteros representando el mapa.
+     */
     public int[][] getTiles() {
         return tiles;
     }
 
-    // Devuelve el tipo de tile en coordenadas en píxeles
+    /**
+     * Devuelve el tipo de tile en una posición específica (en píxeles).
+     *
+     * @param x Coordenada X en píxeles.
+     * @param y Coordenada Y en píxeles.
+     * @return El valor del tile, o -1 si la posición está fuera del mapa.
+     */
     public int getTileAt(int x, int y) {
         int col = x / tileSize;
         int row = y / tileSize;
@@ -82,17 +113,32 @@ public class TileMap {
         return tiles[row][col];
     }
 
-    // Obtiene el tile del centro de un rectángulo
+    /**
+     * Obtiene el tipo de tile ubicado en el centro de un rectángulo.
+     *
+     * @param rect El rectángulo que se evalúa.
+     * @return El valor del tile central.
+     */
     public int getTileTypeAtRect(Rectangle rect) {
         int centerX = rect.x + rect.width / 2;
         int centerY = rect.y + rect.height / 2;
         return getTileAt(centerX, centerY);
     }
 
+    /**
+     * Obtiene el ancho total del mundo.
+     *
+     * @return El ancho del mundo en píxeles.
+     */
     public int getWorldWidth() {
         return worldWidth;
     }
 
+    /**
+     * Obtiene la altura total del mundo.
+     *
+     * @return La altura del mundo en píxeles.
+     */
     public int getWorldHeight() {
         return worldHeight;
     }

@@ -5,10 +5,27 @@ import java.util.ArrayList;
 import java.util.List;
 import game.map.TileMap;
 
+/**
+ * Gestiona la detección de colisiones en el juego.
+ * <p>
+ * La clase construye una lista de áreas de colisión a partir de un TileMap,
+ * considerando los tiles que representan obstáculos. Proporciona métodos para
+ * verificar si un rectángulo colisiona con alguna de estas áreas.
+ * </p>
+ */
 public class CollisionManager {
     private List<Rectangle> collisionAreas;
 
-    // Se construye a partir del TileMap extrayendo los tiles con valor 1 (obstáculos)
+    /**
+     * Crea una instancia de CollisionManager a partir del TileMap.
+     * <p>
+     * Se recorren todos los tiles del mapa y se agregan a la lista aquellas celdas
+     * cuyo valor sea 1 (indicando un obstáculo). También se imprimen mensajes para
+     * otros valores (por ejemplo, el valor 2 para agua).
+     * </p>
+     *
+     * @param tileMap El mapa de tiles desde el cual extraer las áreas de colisión.
+     */
     public CollisionManager(TileMap tileMap) {
         collisionAreas = new ArrayList<>();
         int tileSize = tileMap.getTileSize();
@@ -25,7 +42,12 @@ public class CollisionManager {
         }
     }
 
-    // Verifica si un rectángulo colisiona con alguna de las áreas
+    /**
+     * Verifica si el rectángulo especificado colisiona con alguna de las áreas de colisión.
+     *
+     * @param rect El rectángulo a verificar.
+     * @return {@code true} si hay colisión; {@code false} en caso contrario.
+     */
     public boolean isColliding(Rectangle rect) {
         for (Rectangle area : collisionAreas) {
             if (rect.intersects(area))
@@ -34,7 +56,16 @@ public class CollisionManager {
         return false;
     }
 
-    // Verifica si hay colisión abajo (solo los pies del jugador)
+    /**
+     * Verifica si hay colisión en la parte inferior del rectángulo, considerando un desplazamiento vertical.
+     * <p>
+     * Este método se puede utilizar para detectar colisiones en los pies del jugador.
+     * </p>
+     *
+     * @param rect El rectángulo a verificar.
+     * @param dy   Desplazamiento vertical a aplicar.
+     * @return {@code true} si hay colisión en la parte inferior; {@code false} en caso contrario.
+     */
     public boolean isCollidingBelow(Rectangle rect, int dy) {
         Rectangle movedRect = new Rectangle(rect.x, rect.y + dy, rect.width, rect.height);
         for (Rectangle area : collisionAreas) {
@@ -44,5 +75,4 @@ public class CollisionManager {
         }
         return false;
     }
-
 }
