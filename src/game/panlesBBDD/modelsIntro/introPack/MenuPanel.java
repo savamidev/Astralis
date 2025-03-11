@@ -40,21 +40,34 @@ public class MenuPanel extends JPanel {
         setLayout(null);
         setOpaque(false);
 
-        // Carga las imágenes para los botones.
-        ImageIcon startIcon = new ImageIcon("src/resources/imagen/start.png");
-        ImageIcon exitIcon = new ImageIcon("ruta/a/tu/imagen_exit.png"); // Asegúrate de actualizar esta ruta.
+        // Carga la imagen original del botón START.
+        ImageIcon startIcon = new ImageIcon("src/resources/imagen/botones/start.png");
+        // Redimensiona la imagen a las dimensiones deseadas (ejemplo: 200x100 píxeles).
+        Image startImg = startIcon.getImage().getScaledInstance(650, 500, Image.SCALE_SMOOTH);
+        // Crea un nuevo ImageIcon con la imagen redimensionada.
+        ImageIcon resizedStartIcon = new ImageIcon(startImg);
 
-        // Crea y configura el botón START.
-        JButton startButton = new JButton(startIcon);
+        // Carga la imagen original del botón EXIT.
+        ImageIcon exitIcon = new ImageIcon("src/resources/imagen/botones/exit.png");
+        // Redimensiona la imagen a las dimensiones deseadas (ejemplo: 200x100 píxeles).
+        Image exitImg = exitIcon.getImage().getScaledInstance(650, 500, Image.SCALE_SMOOTH);
+        // Crea un nuevo ImageIcon con la imagen redimensionada.
+        ImageIcon resizedExitIcon = new ImageIcon(exitImg);
+
+        // Crea y configura el botón START usando el icono redimensionado.
+        JButton startButton = new JButton(resizedStartIcon);
         startButton.setContentAreaFilled(false);
         startButton.setBorderPainted(false);
         startButton.setFocusPainted(false);
-        startButton.setBounds(900, 500, startIcon.getIconWidth(), startIcon.getIconHeight());
+        startButton.setBounds(600, 300, resizedStartIcon.getIconWidth(), resizedStartIcon.getIconHeight());
         add(startButton);
 
-        // Crea y configura el botón EXIT.
-        JButton exitButton = new JButton(exitIcon);
-        exitButton.setBounds(100, 200, exitIcon.getIconWidth(), exitIcon.getIconHeight());
+        // Crea y configura el botón EXIT usando el icono redimensionado.
+        JButton exitButton = new JButton(resizedExitIcon);
+        exitButton.setContentAreaFilled(false);
+        exitButton.setBorderPainted(false);
+        exitButton.setFocusPainted(false);
+        exitButton.setBounds(600, 370, resizedExitIcon.getIconWidth(), resizedExitIcon.getIconHeight());
         add(exitButton);
 
         // Acción del botón EXIT: cierra la aplicación.

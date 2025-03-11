@@ -2,8 +2,11 @@ package game.objects;
 
 import java.awt.Graphics;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.ImageIcon;
 import java.awt.Image;
 
@@ -32,8 +35,7 @@ public class PortalNPC {
     }
 
     /**
-     * Llama a este método para activar la visualización del mensaje.
-     * El mensaje se mostrará durante MESSAGE_DURATION (5s).
+     * Activa la visualización del mensaje.
      */
     public void triggerMessage() {
         showMessage = true;
@@ -41,7 +43,7 @@ public class PortalNPC {
     }
 
     /**
-     * Permite saber si el mensaje aún está activo.
+     * Devuelve si el mensaje aún está activo.
      */
     public boolean isMessageActive() {
         if (showMessage) {
@@ -49,7 +51,6 @@ public class PortalNPC {
             if (elapsed < MESSAGE_DURATION) {
                 return true;
             } else {
-                // Expiró el tiempo, se desactiva
                 showMessage = false;
             }
         }
@@ -57,14 +58,7 @@ public class PortalNPC {
     }
 
     /**
-     * Retorna el tiempo transcurrido desde que se activó el mensaje.
-     */
-    public long getMessageElapsedTime() {
-        return System.currentTimeMillis() - messageStartTime;
-    }
-
-    /**
-     * Dibuja el NPC y, si showMessage es true, dibuja un recuadro con el mensaje.
+     * Dibuja el NPC y, si el mensaje está activo, dibuja un recuadro con el mensaje.
      * El mensaje varía según si el jugador posee la llave.
      *
      * @param g            Objeto Graphics para el dibujo.
@@ -79,32 +73,86 @@ public class PortalNPC {
             g.fillRect(x, y, width, height);
         }
 
-        // Solo se dibuja el mensaje si está activado y no ha expirado
+        // Dibujar el mensaje si está activo
         if (isMessageActive()) {
             String message;
             if (playerHasKey) {
-                message = "¡Ya puedes pasar a la siguiente mision!";
+                message = "¡Ya puedes pasar a la siguiente misión!";
             } else {
-                message = "No puedo dejarte pasar, aun no has encontrado la llave, recorda buscarla y entregarmela";
+                message = "No puedo dejarte pasar, aun no has encontrado la llave, "
+                        + "recuerda buscarla y entregármela";
             }
-            // Definir dimensiones y posición del recuadro (por encima del NPC)
-            int boxWidth = 300;
-            int boxHeight = 40;
+            // Definir un ancho máximo para el recuadro
+            int maxWidth = 280;
+            Font font = g.getFont();
+            // Si no se quiere usar la fuente actual, se puede definir una específica:
+            // font = new Font("Arial", Font.BOLD, 14);
+            g.setFont(font);
+            FontMetrics fm = g.getFontMetrics();
+            // Dividir el mensaje en líneas usando el método wrapText
+            String[] lines = wrapText(message, fm, maxWidth);
+            // Calcular el ancho máximo real y el alto total del recuadro
+            int boxWidth = 0;
+            for (String line : lines) {
+                int lineWidth = fm.stringWidth(line);
+                if (lineWidth > boxWidth) {
+                    boxWidth = lineWidth;
+                }
+            }
+            boxWidth += 20; // padding horizontal
+            int lineHeight = fm.getHeight();
+            int boxHeight = lines.length * lineHeight + 10; // padding vertical
+
+            // Posicionar el recuadro centrado horizontalmente sobre el NPC, por encima de él
             int boxX = x + (width - boxWidth) / 2;
             int boxY = y - boxHeight - 10;
 
-            // Fondo semitransparente
+            // Dibujar fondo del recuadro (con opacidad)
             g.setColor(new Color(0, 0, 0, 150));
             g.fillRoundRect(boxX, boxY, boxWidth, boxHeight, 10, 10);
 
-            // Dibujar el texto centrado en el recuadro
+            // Dibujar el texto centrado en cada línea
             g.setColor(Color.WHITE);
-            FontMetrics fm = g.getFontMetrics();
-            int textWidth = fm.stringWidth(message);
-            int textX = boxX + (boxWidth - textWidth) / 2;
-            int textY = boxY + ((boxHeight - fm.getHeight()) / 2) + fm.getAscent();
-            g.drawString(message, textX, textY);
+            int textY = boxY + fm.getAscent() + 5;
+            for (String line : lines) {
+                int textWidth = fm.stringWidth(line);
+                int textX = boxX + (boxWidth - textWidth) / 2;
+                g.drawString(line, textX, textY);
+                textY += lineHeight;
+            }
         }
+    }
+
+    /**
+     * Método auxiliar para hacer word-wrap del texto.
+     * Divide el texto en líneas de modo que cada línea no supere maxWidth píxeles.
+     *
+     * @param text     El texto a envolver.
+     * @param fm       FontMetrics para medir el texto.
+     * @param maxWidth El ancho máximo permitido en píxeles.
+     * @return Un arreglo de Strings, cada uno representando una línea.
+     */
+    private String[] wrapText(String text, FontMetrics fm, int maxWidth) {
+        String[] words = text.split(" ");
+        List<String> lines = new ArrayList<>();
+        StringBuilder currentLine = new StringBuilder();
+        for (String word : words) {
+            if (currentLine.length() == 0) {
+                currentLine.append(word);
+            } else {
+                String testLine = currentLine.toString() + " " + word;
+                if (fm.stringWidth(testLine) <= maxWidth) {
+                    currentLine.append(" ").append(word);
+                } else {
+                    lines.add(currentLine.toString());
+                    currentLine = new StringBuilder(word);
+                }
+            }
+        }
+        if (currentLine.length() > 0) {
+            lines.add(currentLine.toString());
+        }
+        return lines.toArray(new String[0]);
     }
 
     /**

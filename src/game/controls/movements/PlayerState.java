@@ -82,4 +82,14 @@ public class PlayerState {
     public void setLlave(boolean hasLlave) {
         this.hasLlave = hasLlave;
     }
+
+    /**
+     * Reinicia el estado del jugador a los valores iniciales.
+     */
+    public void reset() {
+        this.life = 1;
+        this.hasSandia = false;
+        this.hasLlave = false;
+    }
+
 }

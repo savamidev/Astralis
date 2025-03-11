@@ -14,13 +14,9 @@ public class BackgroundSound {
     private Clip clip;
     private FloatControl gainControl;
 
-    /** Volumen máximo en decibeles. */
     private final float MAX_GAIN = 0.0f;
-    /** Volumen inicial (mínimo) en decibeles. */
     private final float MIN_GAIN = -40.0f;
-    /** Incremento de volumen en cada paso del fade. */
     private final float GAIN_STEP = 1.0f;
-    /** Intervalo en milisegundos entre cada incremento del fade. */
     private final int FADE_INTERVAL = 200;
 
     /**
@@ -38,7 +34,6 @@ public class BackgroundSound {
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(url);
             clip = AudioSystem.getClip();
             clip.open(audioStream);
-            // Obtiene el control de ganancia para ajustar el volumen.
             gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
             gainControl.setValue(MIN_GAIN);
         } catch(Exception e) {

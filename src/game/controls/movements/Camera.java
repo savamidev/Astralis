@@ -3,8 +3,8 @@ package game.controls.movements;
 /**
  * Representa la cámara que sigue al jugador en el juego.
  * <p>
- * La cámara calcula los desplazamientos necesarios (offsets) para centrar al jugador
- * en el área visible de la pantalla, teniendo en cuenta las dimensiones del mundo.
+ * En esta versión, la cámara solo sigue el movimiento horizontal del jugador.
+ * El offset vertical se mantiene fijo, centrado en el mundo.
  * </p>
  */
 public class Camera {
@@ -17,7 +17,7 @@ public class Camera {
     /**
      * Crea una nueva instancia de Camera.
      *
-     * @param player      El jugador al que se le seguirá.
+     * @param player      El jugador a seguir.
      * @param screenWidth Ancho del área visible (pantalla).
      * @param screenHeight Altura del área visible (pantalla).
      * @param worldWidth  Ancho total del mundo del juego.
@@ -32,7 +32,7 @@ public class Camera {
     }
 
     /**
-     * Calcula el desplazamiento horizontal (offset X) de la cámara para centrar al jugador.
+     * Calcula el desplazamiento horizontal (offset X) para centrar al jugador.
      *
      * @return El offset horizontal.
      */
@@ -47,18 +47,13 @@ public class Camera {
     }
 
     /**
-     * Calcula el desplazamiento vertical (offset Y) de la cámara para centrar al jugador.
+     * Devuelve un offset vertical fijo, centrado en el mundo.
+     * De esta forma, la cámara no sigue el salto del jugador.
      *
-     * @return El offset vertical.
+     * @return El offset vertical constante.
      */
     public int getOffsetY() {
-        if (worldHeight <= screenHeight) {
-            return (worldHeight - screenHeight) / 2;
-        }
-        int desired = player.getY() + player.getHeight() / 2 - screenHeight / 2;
-        if (desired < 0) return 0;
-        if (desired > worldHeight - screenHeight) return worldHeight - screenHeight;
-        return desired;
+        return (worldHeight - screenHeight) / 2;
     }
 
     /**
