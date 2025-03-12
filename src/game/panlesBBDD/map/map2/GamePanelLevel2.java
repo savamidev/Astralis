@@ -4,11 +4,11 @@ import game.audio.BackgroundSound;
 import game.objects.Collectible;
 import game.objects.Collectible.Type;
 import game.objects.PortalNPC;
-import game.effects.LeafParticleEffect;
-import game.effects.RunGrassEffect;
 import game.panlesBBDD.map.map1.CollisionManager;
 import game.panlesBBDD.map.map1.DeathStyledDialog;
 import game.panlesBBDD.map.map1.TileMap;
+import game.effects.RainParticle;
+import game.effects.Particle;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,10 +25,10 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
     private TileMap tileMap;
     private CollisionManager collisionManager;
     private Image backgroundImage;
-    private int worldWidth = 8000; // Nuevo ancho para el nivel 2
+    private int worldWidth = 1920; // Ancho para el nivel 2
     private int worldHeight = 1080;
     private final int floorY = 1000;
-    private final int initialStartY = 650;
+    private final int initialStartY = 670;
     private final boolean debugMode = false;
 
     private BackgroundSound backgroundSound;
@@ -54,10 +54,12 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
     private PortalNPC portalNpc;
     private boolean deathTriggered = false;
 
-    private LeafParticleEffect leafParticleEffect;
-    private RunGrassEffect runGrassEffect;
-    private int maxLeafParticles = 150;
-    private int maxGrassParticles = 30;
+    // Simulación de lluvia con partículas personalizadas
+    private List<RainParticle> rainParticles;
+    private final int numRaindrops = 600;
+
+    // Animación de "foot dust" (partículas en los pies)
+    private List<Particle> footParticles;
 
     public GamePanelLevel2() {
         setPreferredSize(new Dimension(1920, 1080));
@@ -67,18 +69,17 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         addKeyListener(this);
 
         int tileSize = 40;
-        // Cargar nuevo mapa para el nivel 2
         tileMap = new TileMap("/resources/Map02.csv", tileSize);
         collisionManager = new CollisionManager(tileMap);
 
         player = new Player(150, initialStartY, worldWidth);
-        camera = new Camera(player, 3000, 1080, worldWidth, worldHeight);
+        camera = new Camera(player, 1920, 1080, worldWidth, worldHeight);
 
-        URL bgUrl = getClass().getResource("/resources/imagen/fondoS1.gif");
+        URL bgUrl = getClass().getResource("/resources/imagen/fondoS2.png");
         if (bgUrl != null) {
             backgroundImage = new ImageIcon(bgUrl).getImage();
         } else {
-            System.err.println("No se encontró el fondo en /resources/imagen/fondoS10_level2.png");
+            System.err.println("No se encontró el fondo en /resources/imagen/fondoS2.png");
         }
 
         backgroundSound = new BackgroundSound("/resources/sound/background/background_level2.wav");
@@ -86,9 +87,8 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
 
         collectibles = new ArrayList<>();
         collectibles.add(new Collectible(Type.SANDIA, 400, 370, 60, 60, "/resources/imagen/collect/sandia.png"));
-        // Puedes agregar otros coleccionables propios del nivel 2
+        // Se pueden agregar otros coleccionables según se requiera
 
-        // En este nivel se usa un PortalNPC diferente (opcional)
         portalNpc = new PortalNPC(7500, 550, 100, 100, "/resources/imagen/npc/guard_level2.gif");
 
         URL instructionsUrl = getClass().getResource("/resources/imagen/overlays/instructions.png");
@@ -104,8 +104,18 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         timer = new Timer(16, this);
         timer.start();
 
-        leafParticleEffect = new LeafParticleEffect(worldWidth, floorY, maxLeafParticles);
-        runGrassEffect = new RunGrassEffect(maxGrassParticles);
+        // Inicializar partículas de lluvia usando la clase RainParticle
+        initRainParticles();
+
+        // Inicializar lista de partículas de "foot dust"
+        footParticles = new ArrayList<>();
+    }
+
+    private void initRainParticles() {
+        rainParticles = new ArrayList<>();
+        for (int i = 0; i < numRaindrops; i++) {
+            rainParticles.add(RainParticle.createRandom(worldWidth, worldHeight));
+        }
     }
 
     @Override
@@ -138,6 +148,18 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
             col.draw(g2d);
         }
 
+        // Dibujar partículas de "foot dust" (animación en los pies)
+        for (Particle p : footParticles) {
+            float alpha = p.getAlpha();
+            Color footColor = new Color((p.colorRGB >> 16) & 0xFF,
+                    (p.colorRGB >> 8) & 0xFF,
+                    p.colorRGB & 0xFF,
+                    (int)(alpha * 255));
+            g2d.setColor(footColor);
+            g2d.fillOval((int)p.x, (int)p.y, (int)p.size, (int)p.size);
+        }
+
+        // Dibujar el personaje
         Image playerImg = player.getImage();
         if (playerImg != null) {
             g2d.drawImage(playerImg, player.getX(), player.getY(), player.getWidth(), player.getHeight(), this);
@@ -148,8 +170,19 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
 
         portalNpc.draw(g2d, player.getPlayerState().hasLlave());
 
-        leafParticleEffect.draw(g2d);
-        runGrassEffect.draw(g2d);
+        // Dibujar gotas de lluvia usando las propiedades de RainParticle
+        g2d.setStroke(new BasicStroke(2));
+        for (RainParticle drop : rainParticles) {
+            int blue = drop.colorRGB;
+            float alpha = drop.getAlpha();
+            Color drawColor = new Color(0, 0, blue, (int)(alpha * 255));
+            g2d.setColor(drawColor);
+            int x1 = (int) drop.x;
+            int y1 = (int) drop.y;
+            int x2 = (int)(drop.x + drop.size * 2);
+            int y2 = (int)(drop.y + drop.size * 4);
+            g2d.drawLine(x1, y1, x2, y2);
+        }
 
         drawOverlayMessages(g2d);
         g2d.dispose();
@@ -163,12 +196,24 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
             for (int col = 0; col < cols; col++) {
                 int tileType = tiles[row][col];
                 switch (tileType) {
-                    case 0: g2d.setColor(new Color(200, 200, 200)); break;
-                    case 1: g2d.setColor(Color.DARK_GRAY); break;
-                    case 2: g2d.setColor(Color.BLUE); break;
-                    case 3: g2d.setColor(Color.GREEN); break;
-                    case 4: g2d.setColor(Color.MAGENTA); break;
-                    default: g2d.setColor(Color.BLACK); break;
+                    case 0:
+                        g2d.setColor(new Color(200, 200, 200));
+                        break;
+                    case 1:
+                        g2d.setColor(Color.DARK_GRAY);
+                        break;
+                    case 2:
+                        g2d.setColor(Color.BLUE);
+                        break;
+                    case 3:
+                        g2d.setColor(Color.GREEN);
+                        break;
+                    case 4:
+                        g2d.setColor(Color.MAGENTA);
+                        break;
+                    default:
+                        g2d.setColor(Color.BLACK);
+                        break;
                 }
                 g2d.fillRect(col * tileSize, row * tileSize, tileSize, tileSize);
                 g2d.setColor(Color.BLACK);
@@ -189,16 +234,34 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
             }
         }
 
-        leafParticleEffect.update();
-        runGrassEffect.update();
-
+        // Actualizar partículas de "foot dust"
+        for (int i = 0; i < footParticles.size(); i++) {
+            Particle p = footParticles.get(i);
+            p.update();
+            if (!p.isAlive()) {
+                footParticles.remove(i);
+                i--;
+            }
+        }
+        // Si el jugador se mueve horizontalmente y no está saltando, se generan partículas en sus pies
         if (player.getDx() != 0 && !player.isJumping()) {
             Rectangle feet = player.getFeetRectangle();
-            int originX = feet.x + feet.width / 2;
-            int originY = feet.y + feet.height / 2;
-            runGrassEffect.spawnParticles(originX, originY);
+            spawnFootParticles(feet);
         }
 
+        // Actualizar gotas de lluvia
+        for (int i = 0; i < rainParticles.size(); i++) {
+            RainParticle drop = rainParticles.get(i);
+            drop.update();
+            if (drop.x > worldWidth || drop.y > worldHeight) {
+                drop.x = (float) (Math.random() * (worldWidth / 2)) - 50;
+                drop.y = (float) -Math.random() * 50;
+                drop.life = drop.maxLife;
+                rainParticles.set(i, RainParticle.createRandom(worldWidth, worldHeight));
+            }
+        }
+
+        // Verificar colisiones con agua
         Rectangle feetRect = player.getFeetRectangle();
         Rectangle waterRect = new Rectangle(feetRect.x, feetRect.y, feetRect.width, feetRect.height + 10);
         int tileSize = tileMap.getTileSize();
@@ -287,6 +350,21 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         }
 
         repaint();
+    }
+
+    // Genera partículas de "foot dust" en la zona de los pies del jugador
+    private void spawnFootParticles(Rectangle feet) {
+        int numParticles = 2;
+        for (int i = 0; i < numParticles; i++) {
+            float x = feet.x + (float)(Math.random() * feet.width);
+            float y = feet.y + feet.height;
+            float dx = (float)(Math.random() - 0.5);
+            float dy = -(float)(Math.random() * 1 + 0.5f);
+            float maxLife = 20;
+            int colorRGB = 0x777777;
+            float size = 5 + (float)(Math.random() * 3);
+            footParticles.add(new Particle(x, y, dx, dy, maxLife, colorRGB, size));
+        }
     }
 
     private void triggerDeath() {
