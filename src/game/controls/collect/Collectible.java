@@ -7,6 +7,9 @@ import javax.swing.ImageIcon;
 
 /**
  * Representa un objeto coleccionable en el juego, como una sandía, una llave o unas botas.
+ * Los coleccionables tienen un efecto de oscilación vertical para darles dinamismo.
+ *
+ * @author
  */
 public class Collectible {
 
@@ -15,7 +18,6 @@ public class Collectible {
      */
     public enum Type {
         SANDIA,
-        LLAVE,
         BOTAS  // Nuevo tipo de coleccionable
     }
 
@@ -35,7 +37,7 @@ public class Collectible {
     /**
      * Crea un nuevo objeto coleccionable con las características especificadas.
      *
-     * @param type      Tipo del objeto (SANDIA, LLAVE o BOTAS).
+     * @param type      Tipo del objeto (SANDIA, BOTAS, etc.).
      * @param x         Coordenada X en la que se posicionará el objeto.
      * @param y         Coordenada base en Y en la que se posicionará el objeto.
      * @param width     Ancho del objeto.
@@ -59,6 +61,7 @@ public class Collectible {
 
     /**
      * Actualiza la posición vertical para crear un efecto de oscilación.
+     * Este método modifica internamente el offset que se suma a la posición base Y.
      */
     public void update() {
         if (!collected) {
@@ -71,6 +74,9 @@ public class Collectible {
 
     /**
      * Dibuja el coleccionable en el componente gráfico.
+     * Solo se dibuja si el objeto no ha sido recogido y si la imagen está cargada.
+     *
+     * @param g Objeto Graphics sobre el que se realiza el dibujo.
      */
     public void draw(Graphics g) {
         if (!collected && image != null) {
@@ -81,6 +87,8 @@ public class Collectible {
 
     /**
      * Retorna el área de colisión del objeto.
+     *
+     * @return Un objeto Rectangle que representa los límites del coleccionable.
      */
     public Rectangle getBounds() {
         int yPos = baseY + Math.round(currentOffset);
@@ -88,7 +96,9 @@ public class Collectible {
     }
 
     /**
-     * Establece el estado recogido del objeto.
+     * Establece el estado de recogida del objeto.
+     *
+     * @param collected {@code true} si el objeto ha sido recogido; {@code false} en caso contrario.
      */
     public void setCollected(boolean collected) {
         this.collected = collected;
@@ -96,6 +106,8 @@ public class Collectible {
 
     /**
      * Indica si el objeto ya fue recogido.
+     *
+     * @return {@code true} si ya ha sido recogido; {@code false} de lo contrario.
      */
     public boolean isCollected() {
         return collected;
@@ -103,6 +115,8 @@ public class Collectible {
 
     /**
      * Retorna el tipo de coleccionable.
+     *
+     * @return El valor de la enumeración {@link Type} que representa el tipo del objeto.
      */
     public Type getType() {
         return type;

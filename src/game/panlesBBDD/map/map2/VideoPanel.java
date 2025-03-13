@@ -26,8 +26,8 @@ public class VideoPanel extends JPanel {
             MediaPlayer mediaPlayer = new MediaPlayer(media);
             MediaView mediaView = new MediaView(mediaPlayer);
             mediaView.setPreserveRatio(true);
-            mediaView.setFitWidth(getWidth());
-            mediaView.setFitHeight(getHeight());
+            mediaView.setFitWidth(1920);
+            mediaView.setFitHeight(1080);
 
             Group root = new Group();
             Scene scene = new Scene(root, getWidth(), getHeight());

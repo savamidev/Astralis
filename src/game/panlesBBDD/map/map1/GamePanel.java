@@ -4,7 +4,6 @@ import game.audio.BackgroundSound;
 import game.objects.Collectible;
 import game.objects.Collectible.Type;
 import game.objects.PortalNPC;
-
 import game.effects.LeafParticleEffect;
 import game.effects.RunGrassEffect;
 import game.listeners.LevelTransitionListener;
@@ -57,7 +56,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     private PortalNPC portalNpc;
     private long portalMessageStartTime;
-    private final long PORTAL_MESSAGE_DURATION = 5000;
+    private final long PORTAL_MESSAGE_DURATION = 18000; // 10 segundos
+    private boolean portalMessageTriggered = false;
 
     private boolean deathTriggered = false;
 
@@ -71,6 +71,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private boolean transitionTriggered = false;
     private LevelTransitionListener levelTransitionListener;
 
+    // Nueva variable para la casa
+    private Image houseImage;
+    private int houseX;
+    private int houseY;
+
     public GamePanel() {
         setPreferredSize(new Dimension(1920, 1080));
         setOpaque(false);
@@ -82,7 +87,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         tileMap = new TileMap("/resources/Map01.csv", tileSize);
         collisionManager = new CollisionManager(tileMap);
 
-        player = new Player(150, initialStartY, worldWidth);
+        player = new Player(10, initialStartY, worldWidth);
         camera = new Camera(player, 3000, 1080, worldWidth, worldHeight);
 
         URL bgUrl = getClass().getResource("/resources/imagen/fondoS10.png");
@@ -93,26 +98,24 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
 
         backgroundSound = new BackgroundSound("/resources/sound/background/background.wav");
-        backgroundSound.playWithFadeIn();
+        // Reemplaza playWithFadeIn() por play() para iniciar el audio a volumen completo
+        backgroundSound.play();
 
         collectibles = new ArrayList<>();
         collectibles.add(new Collectible(Type.SANDIA, 400, 370, 60, 60, "/resources/imagen/collect/sandia.png"));
-        collectibles.add(new Collectible(Type.LLAVE, 1300, 550, 60, 60, "/resources/imagen/collect/llave.png"));
         collectibles.add(new Collectible(Type.BOTAS, 1500, 550, 50, 50, "/resources/imagen/collect/botas.png"));
 
-        portalNpc = new PortalNPC(6300, 550, 100, 100, "/resources/imagen/npc/guard.gif");
+        portalNpc = new PortalNPC(6200, 440, 200, 200, "/resources/imagen/npc/guard.gif");
 
-        URL instructionsUrl = getClass().getResource("/resources/imagen/overlays/instructions.png");
-        if (instructionsUrl != null) {
-            instructionsOverlayImg = new ImageIcon(instructionsUrl).getImage();
+        // Cargar imagen de la casa y definir sus coordenadas
+        URL houseUrl = getClass().getResource("/resources/imagen/casa.png");
+        if (houseUrl != null) {
+            houseImage = new ImageIcon(houseUrl).getImage();
+            // Modifica estos valores para colocar la casa donde desees
+            houseX = 6100;
+            houseY = 45;
         } else {
-            System.err.println("No se encontró la imagen de instrucciones en /resources/imagen/overlays/instructions.png");
-        }
-        URL collectibleUrl = getClass().getResource("/resources/imagen/overlays/collectible.png");
-        if (collectibleUrl != null) {
-            collectibleOverlayImg = new ImageIcon(collectibleUrl).getImage();
-        } else {
-            System.err.println("No se encontró la imagen de mensaje de colección en /resources/imagen/overlays/collectible.png");
+            System.err.println("No se encontró la imagen de la casa en /resources/imagen/house.png");
         }
 
         instructionStartTime = System.currentTimeMillis();
@@ -146,6 +149,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             g2d.drawImage(backgroundImage, 0, 0, worldWidth, worldHeight, this);
         }
 
+        // Dibujar la casa (modifica houseX y houseY para ajustar la posición)
+        if (houseImage != null) {
+            g2d.drawImage(houseImage, houseX, houseY, houseImage.getWidth(this), houseImage.getHeight(this), this);
+        }
+
         if (debugMode) {
             Composite originalComposite = g2d.getComposite();
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
@@ -165,10 +173,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             g2d.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
         }
 
-        if (player.getCollisionRectangle().intersects(portalNpc.getBounds())) {
-            portalNpc.triggerMessage();
-        }
-        portalNpc.draw(g2d, player.getPlayerState().hasLlave());
+        // Se dibuja el NPC, el mensaje se activa internamente una única vez.
+        portalNpc.draw(g2d);
 
         leafParticleEffect.draw(g2d);
         runGrassEffect.draw(g2d);
@@ -222,7 +228,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
 
         Rectangle feetRect = player.getFeetRectangle();
-        Rectangle waterRect = new Rectangle(feetRect.x, feetRect.y, feetRect.width, feetRect.height + 10);
+        Rectangle waterRect = new Rectangle(feetRect.x, feetRect.y, feetRect.width, feetRect.height + 30);
         int tileSize = tileMap.getTileSize();
         int startCol = waterRect.x / tileSize;
         int endCol = (waterRect.x + waterRect.width) / tileSize;
@@ -277,9 +283,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 if (col.getType() == Collectible.Type.SANDIA) {
                     player.getPlayerState().setSandia(true);
                     collectibleMessage = "Has recogido la Sandía: ¡Incrementa tu energía y habilita dash!";
-                } else if (col.getType() == Collectible.Type.LLAVE) {
-                    player.getPlayerState().setLlave(true);
-                    collectibleMessage = "Has obtenido la Llave: ¡Ahora puedes abrir la puerta!";
                 } else if (col.getType() == Collectible.Type.BOTAS) {
                     player.applyBoots();
                     collectibleMessage = "¡Has recogido las Botas: Aumenta tu velocidad!";
@@ -289,18 +292,24 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
         }
 
-        // Si el jugador tiene llave y colisiona con el portal, dispara la transición (solo una vez)
-        if (!transitionTriggered && player.getCollisionRectangle().intersects(portalNpc.getBounds())
-                && player.getPlayerState().hasLlave()) {
-            transitionTriggered = true;
-            timer.stop();
-            if (backgroundSound != null) {
-                backgroundSound.stop();
+        // Manejo del NPC Portal y transición:
+        // Al colisionar, se activa el mensaje una única vez; pasados 10 segundos se realiza la transición.
+        if (!transitionTriggered && player.getCollisionRectangle().intersects(portalNpc.getBounds())) {
+            if (!portalMessageTriggered) {
+                portalNpc.triggerMessage();
+                portalMessageStartTime = System.currentTimeMillis();
+                portalMessageTriggered = true;
+            } else if (System.currentTimeMillis() - portalMessageStartTime >= PORTAL_MESSAGE_DURATION) {
+                transitionTriggered = true;
+                timer.stop();
+                if (backgroundSound != null) {
+                    backgroundSound.stop();
+                }
+                if (levelTransitionListener != null) {
+                    levelTransitionListener.onLevelTransitionRequested();
+                }
+                return;
             }
-            if (levelTransitionListener != null) {
-                levelTransitionListener.onLevelTransitionRequested();
-            }
-            return;
         }
 
         Rectangle playerRect = player.getCollisionRectangle();
@@ -336,14 +345,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
         Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
         DeathStyledDialog dsd = new DeathStyledDialog(owner, () -> {
-            player.setPosition(150, initialStartY - player.getHeight());
+            player.setPosition(130, initialStartY - player.getHeight());
             player.stop();
             player.stopWalkingSound();
             player.getPlayerState().reset();
             for (Collectible col : collectibles) {
                 col.setCollected(false);
             }
-            backgroundSound.playWithFadeIn();
+            // Se reemplaza playWithFadeIn() por play() para iniciar a volumen completo
+            backgroundSound.play();
             timer.start();
             deathTriggered = false;
             SwingUtilities.invokeLater(() -> requestFocusInWindow());
@@ -402,23 +412,40 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                     alpha = 1.0f - (float) fadeOutElapsed / FADE_OUT_DURATION;
                 }
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-                int overlayWidth = 500;
-                int overlayHeight = 80;
-                int instructionsOverlayX = customInstructionsX;
-                int instructionsOverlayY = customInstructionsY;
+
+                int overlayWidth = 700;
+                int overlayHeight = 120;
+                int instructionsOverlayX = 100;
+                int instructionsOverlayY = 170;
+
                 if (instructionsOverlayImg != null) {
                     g2d.drawImage(instructionsOverlayImg, instructionsOverlayX, instructionsOverlayY, overlayWidth, overlayHeight, null);
                 } else {
                     g2d.setColor(new Color(0, 0, 0, 200));
                     g2d.fillRoundRect(instructionsOverlayX, instructionsOverlayY, overlayWidth, overlayHeight, 20, 20);
                 }
+
                 g2d.setColor(Color.WHITE);
-                String instructionText = "Controles: W para saltar, A para izquierda, D para derecha, SHIFT para dash";
-                FontMetrics fm = g2d.getFontMetrics();
+                String instructionText = "Controles: W o ↑ para saltar, A o ← para izquierda, D o → para derecha, doble salto w o ↑ y shift para dash";
+
+                Font originalFont = g2d.getFont();
+                FontMetrics fm = g2d.getFontMetrics(originalFont);
                 int textWidth = fm.stringWidth(instructionText);
+                int maxTextWidth = overlayWidth - 10;
+
+                if (textWidth > maxTextWidth) {
+                    float scalingFactor = (float) maxTextWidth / textWidth;
+                    float newFontSize = Math.max(10, originalFont.getSize2D() * scalingFactor);
+                    Font newFont = originalFont.deriveFont(newFontSize);
+                    g2d.setFont(newFont);
+                    fm = g2d.getFontMetrics(newFont);
+                    textWidth = fm.stringWidth(instructionText);
+                }
+
                 int textX = instructionsOverlayX + (overlayWidth - textWidth) / 2;
                 int textY = instructionsOverlayY + (overlayHeight + fm.getAscent()) / 2 - 5;
                 g2d.drawString(instructionText, textX, textY);
+
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             }
         }

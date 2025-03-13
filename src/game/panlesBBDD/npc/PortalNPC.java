@@ -15,10 +15,21 @@ public class PortalNPC {
     private int width, height;
     private Image gifImage;
 
+    // Conversación: Iris tiene 2 mensajes y Viajero 2 mensajes.
+    private final String[] conversation = {
+            "Iris: ¡Hola, viajero! Mi hermana se ha perdido, ¿has visto a una chica parecida a mí?",
+            "Viajero: ¡Vaya, lo siento mucho! Escuché en la ciudad que la vieron yendo hacia la Cueva del Susurro.",
+            "Iris: De acuerdo, ¿sabrías guiarme?",
+            "Viajero: Sí, te dejo mi mapa y podrás guiarte hasta la cueva."
+    };
+    // Cada mensaje se muestra durante 3000 ms (3 segundos)
+    private final long MESSAGE_PER_MESSAGE = 5000;
+
     // Control del mensaje del NPC
     private boolean showMessage = false;
     private long messageStartTime = 0;
-    private final long MESSAGE_DURATION = 5000; // 5 segundos
+    // La duración total de la conversación se calcula a partir del número de mensajes
+    private final long TOTAL_MESSAGE_DURATION = conversation.length * MESSAGE_PER_MESSAGE;
 
     public PortalNPC(int x, int y, int width, int height, String gifPath) {
         this.x = x;
@@ -35,20 +46,22 @@ public class PortalNPC {
     }
 
     /**
-     * Activa la visualización del mensaje.
+     * Activa la visualización del mensaje (solo si aún no se ha activado).
      */
     public void triggerMessage() {
-        showMessage = true;
-        messageStartTime = System.currentTimeMillis();
+        if (!showMessage) {
+            showMessage = true;
+            messageStartTime = System.currentTimeMillis();
+        }
     }
 
     /**
-     * Devuelve si el mensaje aún está activo.
+     * Indica si la conversación aún está activa.
      */
     public boolean isMessageActive() {
         if (showMessage) {
             long elapsed = System.currentTimeMillis() - messageStartTime;
-            if (elapsed < MESSAGE_DURATION) {
+            if (elapsed < TOTAL_MESSAGE_DURATION) {
                 return true;
             } else {
                 showMessage = false;
@@ -58,13 +71,11 @@ public class PortalNPC {
     }
 
     /**
-     * Dibuja el NPC y, si el mensaje está activo, dibuja un recuadro con el mensaje.
-     * El mensaje varía según si el jugador posee la llave.
+     * Dibuja el NPC y, si la conversación está activa, muestra el mensaje actual.
      *
-     * @param g            Objeto Graphics para el dibujo.
-     * @param playerHasKey true si el jugador tiene la llave.
+     * @param g Objeto Graphics para el dibujo.
      */
-    public void draw(Graphics g, boolean playerHasKey) {
+    public void draw(Graphics g) {
         // Dibujar la imagen del NPC
         if (gifImage != null) {
             g.drawImage(gifImage, x, y, width, height, null);
@@ -73,25 +84,21 @@ public class PortalNPC {
             g.fillRect(x, y, width, height);
         }
 
-        // Dibujar el mensaje si está activo
+        // Dibujar el mensaje de conversación si está activo
         if (isMessageActive()) {
-            String message;
-            if (playerHasKey) {
-                message = "¡Ya puedes pasar a la siguiente misión!";
-            } else {
-                message = "No puedo dejarte pasar, aun no has encontrado la llave, "
-                        + "recuerda buscarla y entregármela";
+            long elapsed = System.currentTimeMillis() - messageStartTime;
+            // Calcular qué mensaje se debe mostrar
+            int index = (int)(elapsed / MESSAGE_PER_MESSAGE);
+            if(index >= conversation.length) {
+                index = conversation.length - 1;
             }
-            // Definir un ancho máximo para el recuadro
+            String message = conversation[index];
+
             int maxWidth = 280;
             Font font = g.getFont();
-            // Si no se quiere usar la fuente actual, se puede definir una específica:
-            // font = new Font("Arial", Font.BOLD, 14);
             g.setFont(font);
             FontMetrics fm = g.getFontMetrics();
-            // Dividir el mensaje en líneas usando el método wrapText
             String[] lines = wrapText(message, fm, maxWidth);
-            // Calcular el ancho máximo real y el alto total del recuadro
             int boxWidth = 0;
             for (String line : lines) {
                 int lineWidth = fm.stringWidth(line);
@@ -99,19 +106,19 @@ public class PortalNPC {
                     boxWidth = lineWidth;
                 }
             }
-            boxWidth += 20; // padding horizontal
+            boxWidth += 30; // padding horizontal
             int lineHeight = fm.getHeight();
-            int boxHeight = lines.length * lineHeight + 10; // padding vertical
+            int boxHeight = lines.length * lineHeight + 20; // padding vertical
 
-            // Posicionar el recuadro centrado horizontalmente sobre el NPC, por encima de él
+            // Posicionar el recuadro centrado sobre el NPC (por encima de él)
             int boxX = x + (width - boxWidth) / 2;
             int boxY = y - boxHeight - 10;
 
-            // Dibujar fondo del recuadro (con opacidad)
+            // Dibujar fondo del recuadro
             g.setColor(new Color(0, 0, 0, 150));
             g.fillRoundRect(boxX, boxY, boxWidth, boxHeight, 10, 10);
 
-            // Dibujar el texto centrado en cada línea
+            // Dibujar el texto centrado
             g.setColor(Color.WHITE);
             int textY = boxY + fm.getAscent() + 5;
             for (String line : lines) {

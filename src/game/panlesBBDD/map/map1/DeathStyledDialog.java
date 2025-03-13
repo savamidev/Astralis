@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.InputStream;
 import javax.sound.sampled.*;
+import game.panlesBBDD.map.map1.ScaledGif;
 
 public class DeathStyledDialog extends JDialog {
     // Variables para la animación
@@ -19,23 +20,21 @@ public class DeathStyledDialog extends JDialog {
     public DeathStyledDialog(Frame owner, Runnable onClose) {
         super(owner, true);
         this.onClose = onClose;
+        // Configuración del dialogo
         setUndecorated(true);
-        setSize(800, 600);
+        setSize(1920, 1080);
         setLocationRelativeTo(owner);
-        // Asegurarse de que la ventana soporte opacidad
-        setBackground(new Color(0,0,0,0)); // Fondo transparente
+        setBackground(new Color(0, 0, 0, 0)); // Fondo transparente
 
-        // Agregar el JLabel con la imagen o GIF
-        JLabel label = new JLabel(new ImageIcon(getClass().getResource("/resources/imagen/gameover.gif")));
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        label.setVerticalAlignment(SwingConstants.CENTER);
+        // Utiliza el panel personalizado para mostrar el gif escalado
+        ScaledGif gifPanel = new ScaledGif("/resources/imagen/gameover.gif");
         getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(label, BorderLayout.CENTER);
+        getContentPane().add(gifPanel, BorderLayout.CENTER);
 
         // Cargar la música de muerte
         loadDeathMusic();
 
-        // Configurar el Timer para animar la opacidad: tick cada 50ms.
+        // Configurar el Timer para animar la opacidad (tick cada 50ms)
         timer = new Timer(50, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -43,13 +42,13 @@ public class DeathStyledDialog extends JDialog {
                 // Fade in: 0 <= step <= 20
                 if (step <= 20) {
                     currentAlpha = step / 20.0f;
-                } else if (step <= 60) { // Mantener opacidad total (hold) durante 40 ticks (2 s)
+                } else if (step <= 60) { // Mantener opacidad total durante 40 ticks
                     currentAlpha = 1.0f;
                 } else if (step <= 80) { // Fade out: 60 < step <= 80
                     currentAlpha = (80 - step) / 20.0f;
                 } else {
                     timer.stop();
-                    // Detener la música
+                    // Detener y cerrar la música
                     if (deathMusic != null) {
                         deathMusic.stop();
                         deathMusic.close();
@@ -61,7 +60,7 @@ public class DeathStyledDialog extends JDialog {
                     }
                     return;
                 }
-                // Actualizar la opacidad de la ventana
+                // Actualizar la opacidad del dialogo
                 setOpacity(currentAlpha);
             }
         });
@@ -71,7 +70,7 @@ public class DeathStyledDialog extends JDialog {
         try {
             InputStream is = getClass().getResourceAsStream("/resources/sound/gameover.wav");
             if (is == null) {
-                System.err.println("No se encontró la música de muerte en /resources/sound/death_music.wav");
+                System.err.println("No se encontró la música de muerte en /resources/sound/gameover.wav");
                 return;
             }
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(is);
@@ -87,12 +86,12 @@ public class DeathStyledDialog extends JDialog {
         currentAlpha = 0.0f;
         step = 0;
         setOpacity(0.0f);
-        // Iniciar la música
+        // Iniciar la música de muerte
         if (deathMusic != null) {
             deathMusic.setFramePosition(0);
             deathMusic.start();
         }
-        // Iniciar la animación
+        // Iniciar la animación y mostrar el dialogo
         timer.start();
         setVisible(true);
     }

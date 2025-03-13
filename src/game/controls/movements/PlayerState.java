@@ -2,6 +2,9 @@ package game.controls.movements;
 
 /**
  * Representa el estado del jugador, incluyendo la cantidad de vidas y la posesión de objetos.
+ * <p>
+ * Inicialmente, el jugador comienza con una sola vida y sin objetos (ni sandía ni llave).
+ * </p>
  */
 public class PlayerState {
     private int life;
@@ -9,13 +12,15 @@ public class PlayerState {
     private boolean hasLlave;
 
     /**
-     * Crea una nueva instancia de PlayerState.
-     * <p>
-     * Inicialmente, el jugador tiene una sola vida y no posee ni la sandía ni la llave.
-     * </p>
+     * Crea una nueva instancia de PlayerState con los valores iniciales:
+     * <ul>
+     *   <li>life = 1</li>
+     *   <li>hasSandia = false</li>
+     *   <li>hasLlave = false</li>
+     * </ul>
      */
     public PlayerState() {
-        this.life = 1; // Una sola vida.
+        this.life = 1;
         this.hasSandia = false;
         this.hasLlave = false;
     }
@@ -41,7 +46,7 @@ public class PlayerState {
     /**
      * Verifica si el jugador ha perdido todas sus vidas.
      *
-     * @return {@code true} si el jugador está muerto; de lo contrario, {@code false}.
+     * @return {@code true} si el jugador está muerto (life <= 0), {@code false} en caso contrario.
      */
     public boolean isDead() {
         return life <= 0;
@@ -50,7 +55,7 @@ public class PlayerState {
     /**
      * Verifica si el jugador posee la sandía.
      *
-     * @return {@code true} si el jugador tiene la sandía; de lo contrario, {@code false}.
+     * @return {@code true} si el jugador tiene la sandía, {@code false} en caso contrario.
      */
     public boolean hasSandia() {
         return hasSandia;
@@ -59,7 +64,7 @@ public class PlayerState {
     /**
      * Establece el estado de posesión de la sandía.
      *
-     * @param hasSandia {@code true} si el jugador obtiene la sandía; {@code false} si se la quita.
+     * @param hasSandia {@code true} para indicar que el jugador tiene la sandía; {@code false} en caso contrario.
      */
     public void setSandia(boolean hasSandia) {
         this.hasSandia = hasSandia;
@@ -68,7 +73,7 @@ public class PlayerState {
     /**
      * Verifica si el jugador posee la llave.
      *
-     * @return {@code true} si el jugador tiene la llave; de lo contrario, {@code false}.
+     * @return {@code true} si el jugador tiene la llave, {@code false} en caso contrario.
      */
     public boolean hasLlave() {
         return hasLlave;
@@ -77,7 +82,7 @@ public class PlayerState {
     /**
      * Establece el estado de posesión de la llave.
      *
-     * @param hasLlave {@code true} si el jugador obtiene la llave; {@code false} si se la quita.
+     * @param hasLlave {@code true} para indicar que el jugador tiene la llave; {@code false} en caso contrario.
      */
     public void setLlave(boolean hasLlave) {
         this.hasLlave = hasLlave;
@@ -91,5 +96,4 @@ public class PlayerState {
         this.hasSandia = false;
         this.hasLlave = false;
     }
-
 }

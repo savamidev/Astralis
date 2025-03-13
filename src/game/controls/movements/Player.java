@@ -7,6 +7,9 @@ import java.net.URL;
 
 /**
  * Representa al jugador y gestiona sus movimientos, animaciones y acciones.
+ * <p>
+ * La clase administra estados internos como el movimiento, salto, dash, reproducción de sonidos y animaciones.
+ * </p>
  */
 public class Player {
 
@@ -28,21 +31,22 @@ public class Player {
 
     private final int SPEED = 7;  // Velocidad base
     private double speedMultiplier = 1.0; // Multiplicador de velocidad (1.0 por defecto)
-    private final int JUMP_STRENGTH = -30;
+    private final int JUMP_STRENGTH = -25;
     private final double GRAVITY = 2;
     private final int TERMINAL_VELOCITY = 20;
-    private int floorY;
+    private int floorY;  // Suelo fijo (puede usarse cuando no se detecta colisión con tiles)
     private int worldWidth;
 
     private PlayerState state;
     private int currentJumpCount;
 
+    // Constantes para la cantidad de frames en cada animación.
     private static final int COUNT_IDLE = 4;
     private static final int COUNT_LEFT = 6;
     private static final int COUNT_RIGHT = 6;
     private static final int COUNT_JUMP = 6;
     private static final int COUNT_FALL = 4;
-    private static final long FRAME_DELAY = 250;
+    private static final long FRAME_DELAY = 300;
 
     // Campos para el audio.
     private Clip walkingClip;
@@ -55,7 +59,11 @@ public class Player {
     private final int DASH_SPEED = 20;
 
     /**
-     * Crea una instancia de Player con su posición inicial, el suelo y el ancho del mundo.
+     * Crea una instancia de Player con la posición inicial, el nivel del suelo y el ancho del mundo.
+     *
+     * @param startX     Posición inicial en X.
+     * @param floorY     Coordenada Y del suelo.
+     * @param worldWidth Ancho total del mundo del juego.
      */
     public Player(int startX, int floorY, int worldWidth) {
         this.x = startX;
@@ -87,6 +95,12 @@ public class Player {
 
     /**
      * Carga un conjunto de imágenes para la animación a partir de una ruta base.
+     *
+     * @param basePath Ruta base donde se encuentran las imágenes.
+     * @param count    Número de imágenes a cargar.
+     * @param newWidth Ancho deseado para escalar las imágenes.
+     * @param newHeight Alto deseado para escalar las imágenes.
+     * @return Un array de {@link Image} con los frames de la animación.
      */
     private Image[] loadAnimationImages(String basePath, int count, int newWidth, int newHeight) {
         Image[] frames = new Image[count];
@@ -103,7 +117,7 @@ public class Player {
     }
 
     /**
-     * Actualiza el estado actual del jugador y selecciona la animación correspondiente.
+     * Actualiza el estado actual del jugador y selecciona la animación correspondiente en función del movimiento.
      */
     private void updateState() {
         if (jumping) {
@@ -138,6 +152,9 @@ public class Player {
 
     /**
      * Carga un clip de audio desde un recurso.
+     *
+     * @param path Ruta del recurso de audio.
+     * @return Un objeto {@link Clip} con el audio cargado, o {@code null} si ocurre un error.
      */
     private Clip loadClip(String path) {
         try {
@@ -171,7 +188,7 @@ public class Player {
     }
 
     /**
-     * Detiene el sonido de caminar.
+     * Detiene la reproducción del sonido de caminar.
      */
     public void stopWalkingSound() {
         if (walkingClip != null && walkingClip.isActive()) {
@@ -179,11 +196,31 @@ public class Player {
         }
     }
 
+    /**
+     * Detiene todos los clips de audio asociados al jugador.
+     * Esto incluye el sonido de caminar y el de salto, y cierra los clips para que no sigan sonando.
+     */
+    public void stopAllSounds() {
+        stopWalkingSound();
+        if (jumpClip != null && jumpClip.isRunning()) {
+            jumpClip.stop();
+        }
+        if (walkingClip != null) {
+            walkingClip.close();
+        }
+        if (jumpClip != null) {
+            jumpClip.close();
+        }
+    }
+
+    /**
+     * Indica si el jugador está actualmente saltando.
+     *
+     * @return {@code true} si el jugador está en salto; {@code false} en caso contrario.
+     */
     public boolean isJumping() {
         return jumping;
     }
-
-
 
     /**
      * Mueve al jugador hacia la izquierda y reproduce el sonido de caminar si no está en el aire.
@@ -218,13 +255,12 @@ public class Player {
     public void stopDown() { }
 
     /**
-     * Realiza un salto; permite doble salto si posee la sandía.
+     * Realiza un salto; permite doble salto si el jugador posee la sandía.
      * Se detiene el sonido de caminar antes de iniciar el salto.
      */
     public void jump() {
         int availableJumps = state.hasSandia() ? 2 : 1;
         if (currentJumpCount < availableJumps) {
-            // Detener el sonido de caminar al saltar
             stopWalkingSound();
             if (jumpClip == null) {
                 jumpClip = loadClip("/resources/sound/personaje/jump.wav");
@@ -261,7 +297,10 @@ public class Player {
 
     /**
      * Actualiza la posición, el estado y la animación del jugador.
-     * Además, si el jugador está en el aire se asegura de detener el sonido de caminar.
+     * Aplica la gravedad, controla el salto y restablece la posición si alcanza el suelo.
+     * Este método sigue utilizando la condición de posición (y + height >= floorY)
+     * para casos de suelo fijo, pero en terrenos definidos por colisiones (por ejemplo, tile 1)
+     * se puede invocar el método onLanding() desde GamePanel.
      */
     public void update() {
         updateState();
@@ -274,15 +313,15 @@ public class Player {
         if (dy > TERMINAL_VELOCITY)
             dy = TERMINAL_VELOCITY;
 
-        // Si el jugador está en el aire, detener el sonido de caminar
+        // Si el jugador está saltando, se detiene el sonido de caminar.
         if (jumping) {
             stopWalkingSound();
         }
 
+        // Si el jugador alcanza o supera el suelo fijo
         if (y + height >= floorY) {
             if (wasInAir) {
-                playLandingSound();
-                wasInAir = false;
+                onLanding();
             }
             y = floorY - height;
             dy = 0;
@@ -301,6 +340,7 @@ public class Player {
 
     /**
      * Ejecuta un dash horizontal si el jugador posee la sandía.
+     * Durante el dash se incrementa la velocidad horizontal.
      */
     public void dash() {
         if (!state.hasSandia()) {
@@ -320,7 +360,24 @@ public class Player {
     }
 
     /**
+     * Método público que debe llamarse cuando se detecta que el jugador aterriza sobre un terreno,
+     * ya sea por comparación de posición o mediante colisión (por ejemplo, tile de valor 1).
+     * Reproduce el sonido de aterrizaje y, si el jugador sigue moviéndose horizontalmente, reinicia el sonido de caminar.
+     */
+    public void onLanding() {
+        if (wasInAir) {
+            playLandingSound();
+            wasInAir = false;
+        }
+        if (dx != 0) {
+            startWalkingSound();
+        }
+    }
+
+    /**
      * Obtiene el área de colisión del jugador (para colisiones laterales).
+     *
+     * @return Un objeto Rectangle que representa la zona de colisión.
      */
     public Rectangle getCollisionRectangle() {
         int hitboxWidth = width / 3;
@@ -331,7 +388,9 @@ public class Player {
     }
 
     /**
-     * Obtiene el área de colisión de los pies del jugador.
+     * Obtiene el área de colisión de los pies del jugador (para detectar aterrizajes).
+     *
+     * @return Un objeto Rectangle que representa la zona de colisión de los pies.
      */
     public Rectangle getFeetRectangle() {
         int feetWidth = width / 2;
@@ -343,6 +402,8 @@ public class Player {
 
     /**
      * Obtiene el área de colisión de la cabeza del jugador.
+     *
+     * @return Un objeto Rectangle que representa la zona de colisión de la cabeza.
      */
     public Rectangle getHeadRectangle() {
         int headWidth = width / 4;
@@ -352,42 +413,89 @@ public class Player {
         return new Rectangle(headX, headY, headWidth, headHeight);
     }
 
+    /**
+     * Retorna el ancho del jugador.
+     *
+     * @return El ancho en píxeles.
+     */
     public int getWidth() { return width; }
 
+    /**
+     * Retorna el alto del jugador.
+     *
+     * @return El alto en píxeles.
+     */
     public int getHeight() { return height; }
 
+    /**
+     * Establece la posición del jugador.
+     *
+     * @param newX Nueva posición en X.
+     * @param newY Nueva posición en Y.
+     */
     public void setPosition(int newX, int newY) {
         this.x = newX;
         this.y = newY;
     }
 
+    /**
+     * Retorna la posición X actual del jugador.
+     *
+     * @return La coordenada X.
+     */
     public int getX() { return x; }
 
+    /**
+     * Retorna la posición Y actual del jugador.
+     *
+     * @return La coordenada Y.
+     */
     public int getY() { return y; }
 
     /**
      * Retorna la imagen actual del jugador según la animación en curso.
+     *
+     * @return La imagen del frame actual.
      */
     public Image getImage() {
         return (currentAnimation != null) ? currentAnimation.getCurrentFrame() : null;
     }
 
+    /**
+     * Retorna el estado actual del jugador.
+     *
+     * @return Una instancia de {@link PlayerState} con la información del estado.
+     */
     public PlayerState getPlayerState() { return state; }
 
+    /**
+     * Retorna la velocidad vertical actual.
+     *
+     * @return La velocidad vertical (dy).
+     */
     public int getDy() { return dy; }
 
+    /**
+     * Reinicia el movimiento vertical, deteniendo el salto.
+     */
     public void resetVerticalMotion() {
         dy = 0;
         jumping = false;
         currentJumpCount = 0;
     }
 
+    /**
+     * Retorna la velocidad horizontal actual.
+     *
+     * @return La velocidad horizontal (dx).
+     */
     public int getDx() {
         return dx;
     }
 
     /**
-     * Aplica el efecto de las botas: aumenta la velocidad del jugador en un 20%.
+     * Aplica el efecto de las botas: aumenta la velocidad del jugador.
+     * En este caso, incrementa el multiplicador de velocidad.
      */
     public void applyBoots() {
         speedMultiplier = 1.5;

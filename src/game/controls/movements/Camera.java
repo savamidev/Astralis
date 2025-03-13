@@ -3,8 +3,8 @@ package game.controls.movements;
 /**
  * Representa la cámara que sigue al jugador en el juego.
  * <p>
- * En esta versión, la cámara solo sigue el movimiento horizontal del jugador.
- * El offset vertical se mantiene fijo, centrado en el mundo.
+ * La cámara calcula el desplazamiento horizontal para centrar al jugador en la pantalla.
+ * El desplazamiento vertical se mantiene fijo, centrado en el mundo.
  * </p>
  */
 public class Camera {
@@ -17,11 +17,11 @@ public class Camera {
     /**
      * Crea una nueva instancia de Camera.
      *
-     * @param player      El jugador a seguir.
-     * @param screenWidth Ancho del área visible (pantalla).
+     * @param player       El jugador a seguir.
+     * @param screenWidth  Ancho del área visible (pantalla).
      * @param screenHeight Altura del área visible (pantalla).
-     * @param worldWidth  Ancho total del mundo del juego.
-     * @param worldHeight Altura total del mundo del juego.
+     * @param worldWidth   Ancho total del mundo del juego.
+     * @param worldHeight  Altura total del mundo del juego.
      */
     public Camera(Player player, int screenWidth, int screenHeight, int worldWidth, int worldHeight) {
         this.player = player;
@@ -32,7 +32,8 @@ public class Camera {
     }
 
     /**
-     * Calcula el desplazamiento horizontal (offset X) para centrar al jugador.
+     * Calcula el desplazamiento horizontal (offset X) para centrar al jugador en la pantalla.
+     * Si el mundo es más pequeño que la pantalla, centra la vista.
      *
      * @return El offset horizontal.
      */
@@ -48,9 +49,9 @@ public class Camera {
 
     /**
      * Devuelve un offset vertical fijo, centrado en el mundo.
-     * De esta forma, la cámara no sigue el salto del jugador.
+     * Esto permite que la cámara no siga los movimientos verticales del jugador (por ejemplo, saltos).
      *
-     * @return El offset vertical constante.
+     * @return El offset vertical.
      */
     public int getOffsetY() {
         return (worldHeight - screenHeight) / 2;

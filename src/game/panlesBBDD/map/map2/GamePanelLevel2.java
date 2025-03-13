@@ -1,23 +1,31 @@
 package game.controls.movements;
 
 import game.audio.BackgroundSound;
-import game.objects.Collectible;
-import game.objects.Collectible.Type;
 import game.objects.PortalNPC;
 import game.panlesBBDD.map.map1.CollisionManager;
-import game.panlesBBDD.map.map1.DeathStyledDialog;
 import game.panlesBBDD.map.map1.TileMap;
 import game.effects.RainParticle;
 import game.effects.Particle;
+import game.effects.Lightning;
+import game.listeners.LevelTransitionListener;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.AffineTransform;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sound.sampled.*;
+import java.util.Random;
 
+/**
+ * Clase principal del panel de juego (nivel 2) que integra el jugador, partículas, sonido,
+ * rayos con flash y demás efectos.
+ */
 public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListener {
     private Timer timer;
     private Player player;
@@ -25,21 +33,24 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
     private TileMap tileMap;
     private CollisionManager collisionManager;
     private Image backgroundImage;
-    private int worldWidth = 1920; // Ancho para el nivel 2
+    // Dimensiones del área de juego
+    private int worldWidth = 5760;
     private int worldHeight = 1080;
     private final int floorY = 1000;
     private final int initialStartY = 670;
     private final boolean debugMode = false;
 
     private BackgroundSound backgroundSound;
-    private List<Collectible> collectibles;
+    private PortalNPC portalNpc;
+    private boolean deathTriggered = false;
 
-    private String collectibleMessage = null;
-    private long collectibleMessageStartTime;
-    private final int COLLECTIBLE_MESSAGE_DURATION = 2000;
-    private int collectibleMessageX;
-    private int collectibleMessageY;
+    // Partículas de lluvia
+    private List<RainParticle> rainParticles;
+    private final int numRaindrops = 600;
+    // Partículas "foot dust"
+    private List<Particle> footParticles;
 
+    // Instrucciones
     private boolean showInstructions = true;
     private long instructionStartTime;
     private final int INSTRUCTION_DURATION = 10000;
@@ -47,22 +58,42 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
     private final int VISIBLE_DURATION = 6000;
     private final int FADE_OUT_DURATION = 2000;
     private Image instructionsOverlayImg;
-    private Image collectibleOverlayImg;
     private int customInstructionsX = 300;
     private int customInstructionsY = 800;
 
-    private PortalNPC portalNpc;
-    private boolean deathTriggered = false;
+    // Sistema de rayos: uso de la nueva clase Lightning
+    private Lightning currentLightning;
+    // Nuevo intervalo aleatorio de 5 a 10 segundos para el rayo
+    private long nextLightningTime = System.currentTimeMillis() + (5000 + (long) (Math.random() * 5000));
+    private final long lightningDuration = 1500; // 1.5 segundos
 
-    // Simulación de lluvia con partículas personalizadas
-    private List<RainParticle> rainParticles;
-    private final int numRaindrops = 600;
+    // Sonido del rayo
+    private Clip lightningClip;
+    private boolean lightningSoundStarted = false;
+    private long lightningStartTime = 0; // Tiempo en que se inició el sonido
+    private final long soundFadeDuration = 4000; // Duración del fade-out
 
-    // Animación de "foot dust" (partículas en los pies)
-    private List<Particle> footParticles;
+    // Filtro de oscurecimiento gradual
+    private float darknessLevel = 0.1f;
+    private final float maxDarkness = 0.7f;
+    private final float darknessStep = 0.0007f;
+
+    // Simulación de pantalla virtual
+    private final int virtualWidth = 3840;
+    private final int virtualHeight = 2160;
+    private Random rand = new Random();
+
+    // Variable para controlar la transición inmediata con el NPC
+    private boolean transitionTriggered = false;
+
+    private LevelTransitionListener levelTransitionListener;
+
+    public void setLevelTransitionListener(LevelTransitionListener listener) {
+        this.levelTransitionListener = listener;
+    }
 
     public GamePanelLevel2() {
-        setPreferredSize(new Dimension(1920, 1080));
+        setPreferredSize(new Dimension(worldWidth, worldHeight));
         setOpaque(false);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
@@ -82,32 +113,34 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
             System.err.println("No se encontró el fondo en /resources/imagen/fondoS2.png");
         }
 
-        backgroundSound = new BackgroundSound("/resources/sound/background/background_level2.wav");
-        backgroundSound.playWithFadeIn();
+        backgroundSound = new BackgroundSound("/resources/sound/background/background2.wav");
+        backgroundSound.play();
 
-        collectibles = new ArrayList<>();
-        collectibles.add(new Collectible(Type.SANDIA, 400, 370, 60, 60, "/resources/imagen/collect/sandia.png"));
-        // Se pueden agregar otros coleccionables según se requiera
-
-        portalNpc = new PortalNPC(7500, 550, 100, 100, "/resources/imagen/npc/guard_level2.gif");
+        portalNpc = new PortalNPC(5380, 290, 500, 500, "/resources/imagen/cave.png");
 
         URL instructionsUrl = getClass().getResource("/resources/imagen/overlays/instructions.png");
         if (instructionsUrl != null) {
             instructionsOverlayImg = new ImageIcon(instructionsUrl).getImage();
         }
-        URL collectibleUrl = getClass().getResource("/resources/imagen/overlays/collectible.png");
-        if (collectibleUrl != null) {
-            collectibleOverlayImg = new ImageIcon(collectibleUrl).getImage();
+
+        try {
+            URL soundURL = getClass().getResource("/resources/sound/lightning.wav");
+            if (soundURL != null) {
+                AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundURL);
+                lightningClip = AudioSystem.getClip();
+                lightningClip.open(audioIn);
+            } else {
+                System.err.println("No se encontró el sonido del rayo en /resources/sound/lightning.wav");
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
 
         instructionStartTime = System.currentTimeMillis();
         timer = new Timer(16, this);
         timer.start();
 
-        // Inicializar partículas de lluvia usando la clase RainParticle
         initRainParticles();
-
-        // Inicializar lista de partículas de "foot dust"
         footParticles = new ArrayList<>();
     }
 
@@ -136,30 +169,21 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         if (backgroundImage != null) {
             g2d.drawImage(backgroundImage, 0, 0, worldWidth, worldHeight, this);
         }
-
         if (debugMode) {
             Composite originalComposite = g2d.getComposite();
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
             drawTileMap(g2d);
             g2d.setComposite(originalComposite);
         }
-
-        for (Collectible col : collectibles) {
-            col.draw(g2d);
-        }
-
-        // Dibujar partículas de "foot dust" (animación en los pies)
         for (Particle p : footParticles) {
             float alpha = p.getAlpha();
             Color footColor = new Color((p.colorRGB >> 16) & 0xFF,
                     (p.colorRGB >> 8) & 0xFF,
                     p.colorRGB & 0xFF,
-                    (int)(alpha * 255));
+                    (int) (alpha * 255));
             g2d.setColor(footColor);
-            g2d.fillOval((int)p.x, (int)p.y, (int)p.size, (int)p.size);
+            g2d.fillOval((int) p.x, (int) p.y, (int) p.size, (int) p.size);
         }
-
-        // Dibujar el personaje
         Image playerImg = player.getImage();
         if (playerImg != null) {
             g2d.drawImage(playerImg, player.getX(), player.getY(), player.getWidth(), player.getHeight(), this);
@@ -167,25 +191,43 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
             g2d.setColor(Color.RED);
             g2d.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
         }
+        portalNpc.draw(g2d);
+        g2d.dispose();
 
-        portalNpc.draw(g2d, player.getPlayerState().hasLlave());
+        Graphics2D gLightning = (Graphics2D) g.create();
+        gLightning.setTransform(new AffineTransform());
+        if (currentLightning != null) {
+            currentLightning.draw(gLightning);
+        }
+        gLightning.dispose();
 
-        // Dibujar gotas de lluvia usando las propiedades de RainParticle
-        g2d.setStroke(new BasicStroke(2));
+        if (darknessLevel < maxDarkness) {
+            darknessLevel += darknessStep;
+        }
+        Graphics2D gDark = (Graphics2D) g.create();
+        gDark.setTransform(new AffineTransform());
+        gDark.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, darknessLevel));
+        gDark.setColor(Color.BLACK);
+        gDark.fillRect(0, 0, virtualWidth, virtualHeight);
+        gDark.dispose();
+
+        Graphics2D gRain = (Graphics2D) g.create();
+        gRain.translate(-camera.getOffsetX(), -camera.getOffsetY());
+        gRain.setStroke(new BasicStroke(2));
         for (RainParticle drop : rainParticles) {
-            int blue = drop.colorRGB;
             float alpha = drop.getAlpha();
-            Color drawColor = new Color(0, 0, blue, (int)(alpha * 255));
-            g2d.setColor(drawColor);
+            int a = (int) (alpha * 255);
+            Color startColor = new Color(255, 255, 255, a);
+            Color endColor = new Color(0, 0, 139, a);
             int x1 = (int) drop.x;
             int y1 = (int) drop.y;
-            int x2 = (int)(drop.x + drop.size * 2);
-            int y2 = (int)(drop.y + drop.size * 4);
-            g2d.drawLine(x1, y1, x2, y2);
+            int x2 = (int) (drop.x + drop.size * 2);
+            int y2 = (int) (drop.y + drop.size * 4);
+            GradientPaint gp = new GradientPaint(x1, y1, startColor, x2, y2, endColor);
+            gRain.setPaint(gp);
+            gRain.drawLine(x1, y1, x2, y2);
         }
-
-        drawOverlayMessages(g2d);
-        g2d.dispose();
+        gRain.dispose();
     }
 
     private void drawTileMap(Graphics2D g2d) {
@@ -224,17 +266,62 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        int oldX = player.getX();
-        int oldY = player.getY();
-        player.update();
+        long currentTime = System.currentTimeMillis();
 
-        for (Collectible col : collectibles) {
-            if (!col.isCollected()) {
-                col.update();
+        // --- Gestión del sonido del rayo con fade-out progresivo ---
+        if (!lightningSoundStarted && currentTime >= nextLightningTime) {
+            if (lightningClip != null && lightningClip.isRunning()) {
+                lightningClip.stop();
+                try {
+                    FloatControl gainControl = (FloatControl) lightningClip.getControl(FloatControl.Type.MASTER_GAIN);
+                    gainControl.setValue(0f);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            lightningSoundStarted = true;
+            lightningClip.setFramePosition(0);
+            try {
+                FloatControl gainControl = (FloatControl) lightningClip.getControl(FloatControl.Type.MASTER_GAIN);
+                gainControl.setValue(0f);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            lightningClip.start();
+            lightningStartTime = currentTime;
+        }
+        if (lightningSoundStarted && lightningClip != null && lightningClip.isRunning()) {
+            long fadeStart = lightningStartTime + lightningDuration;
+            if (currentTime >= fadeStart) {
+                float fadeProgress = (currentTime - fadeStart) / (float) soundFadeDuration;
+                if (fadeProgress >= 1.0f) {
+                    lightningClip.stop();
+                    lightningSoundStarted = false;
+                } else {
+                    try {
+                        FloatControl gainControl = (FloatControl) lightningClip.getControl(FloatControl.Type.MASTER_GAIN);
+                        float minGain = gainControl.getMinimum();
+                        float maxGain = 0f;
+                        float newGain = maxGain + (minGain - maxGain) * fadeProgress;
+                        gainControl.setValue(newGain);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
             }
         }
 
-        // Actualizar partículas de "foot dust"
+        // --- Gestión del sistema de rayos ---
+        if (currentLightning == null && currentTime >= nextLightningTime) {
+            currentLightning = new Lightning(lightningDuration, virtualWidth, virtualHeight);
+            nextLightningTime = currentTime + (5000 + (long) (Math.random() * 5000)); // intervalo aleatorio de 5 a 10 segundos
+        }
+        if (currentLightning != null && !currentLightning.isActive()) {
+            currentLightning = null;
+        }
+
+        // --- Actualización del jugador y partículas ---
+        player.update();
         for (int i = 0; i < footParticles.size(); i++) {
             Particle p = footParticles.get(i);
             p.update();
@@ -243,226 +330,47 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
                 i--;
             }
         }
-        // Si el jugador se mueve horizontalmente y no está saltando, se generan partículas en sus pies
         if (player.getDx() != 0 && !player.isJumping()) {
             Rectangle feet = player.getFeetRectangle();
             spawnFootParticles(feet);
         }
-
-        // Actualizar gotas de lluvia
         for (int i = 0; i < rainParticles.size(); i++) {
             RainParticle drop = rainParticles.get(i);
             drop.update();
             if (drop.x > worldWidth || drop.y > worldHeight) {
-                drop.x = (float) (Math.random() * (worldWidth / 2)) - 50;
-                drop.y = (float) -Math.random() * 50;
-                drop.life = drop.maxLife;
                 rainParticles.set(i, RainParticle.createRandom(worldWidth, worldHeight));
             }
         }
 
-        // Verificar colisiones con agua
-        Rectangle feetRect = player.getFeetRectangle();
-        Rectangle waterRect = new Rectangle(feetRect.x, feetRect.y, feetRect.width, feetRect.height + 10);
-        int tileSize = tileMap.getTileSize();
-        int startCol = waterRect.x / tileSize;
-        int endCol = (waterRect.x + waterRect.width) / tileSize;
-        int startRow = waterRect.y / tileSize;
-        int endRow = (waterRect.y + waterRect.height) / tileSize;
-        boolean waterCollision = false;
-        for (int row = startRow; row <= endRow; row++) {
-            for (int col = startCol; col <= endCol; col++) {
-                if (tileMap.getTileAt(col * tileSize, row * tileSize) == 2) {
-                    waterCollision = true;
-                    break;
-                }
+        // --- Detección de colisión con el NPC ---
+        if (!transitionTriggered && player.getCollisionRectangle().intersects(portalNpc.getBounds())) {
+            transitionTriggered = true;
+            // Detener todos los sonidos del jugador para evitar que sigan sonando en la transición
+            player.stopAllSounds();
+            timer.stop();
+            if (backgroundSound != null) {
+                backgroundSound.stop();
             }
-            if (waterCollision) break;
-        }
-        if (!deathTriggered && waterCollision) {
-            triggerDeath();
+            if (levelTransitionListener != null) {
+                levelTransitionListener.onLevelTransitionRequested();
+            }
             return;
-        }
-
-        if (player.getDy() < 0) {
-            Rectangle headRect = player.getHeadRectangle();
-            if (collisionManager.isColliding(headRect)) {
-                int collisionRow = headRect.y / tileSize;
-                int newY = (collisionRow + 1) * tileSize;
-                player.setPosition(player.getX(), newY);
-                player.resetVerticalMotion();
-            }
-        }
-
-        Rectangle feetCollisionRect = player.getFeetRectangle();
-        if (player.getDy() >= 0 && collisionManager.isColliding(feetCollisionRect)) {
-            int collisionRow = (feetCollisionRect.y + feetCollisionRect.height) / tileSize;
-            int newY = collisionRow * tileSize - player.getHeight();
-            player.setPosition(player.getX(), newY);
-            player.resetVerticalMotion();
-        }
-
-        Rectangle collisionRect = player.getCollisionRectangle();
-        if (collisionManager.isColliding(collisionRect)) {
-            player.setPosition(oldX, player.getY());
-            player.stop();
-        }
-
-        for (Collectible col : collectibles) {
-            if (!col.isCollected() && player.getCollisionRectangle().intersects(col.getBounds())) {
-                col.setCollected(true);
-                Rectangle bounds = col.getBounds();
-                collectibleMessageX = bounds.x;
-                collectibleMessageY = bounds.y - 50;
-
-                if (col.getType() == Collectible.Type.SANDIA) {
-                    player.getPlayerState().setSandia(true);
-                    collectibleMessage = "Has recogido la Sandía: ¡Incrementa tu energía y habilita dash!";
-                } else if (col.getType() == Collectible.Type.LLAVE) {
-                    player.getPlayerState().setLlave(true);
-                    collectibleMessage = "Has obtenido la Llave: ¡Ahora puedes abrir la puerta!";
-                } else if (col.getType() == Collectible.Type.BOTAS) {
-                    player.applyBoots();
-                    collectibleMessage = "¡Has recogido las Botas: Aumenta tu velocidad!";
-                }
-                collectibleMessageStartTime = System.currentTimeMillis();
-                playCollectSound();
-            }
-        }
-
-        Rectangle playerRect = player.getCollisionRectangle();
-        startCol = playerRect.x / tileSize;
-        int endColRect = (playerRect.x + playerRect.width) / tileSize;
-        int startRowRect = playerRect.y / tileSize;
-        int endRowRect = (playerRect.y + playerRect.height) / tileSize;
-        boolean collisionWithType2 = false;
-        for (int row = startRowRect; row <= endRowRect; row++) {
-            for (int col = startCol; col <= endColRect; col++) {
-                if (tileMap.getTileAt(col * tileSize, row * tileSize) == 2) {
-                    collisionWithType2 = true;
-                    break;
-                }
-            }
-            if (collisionWithType2) break;
-        }
-        if (!deathTriggered && collisionWithType2) {
-            triggerDeath();
         }
 
         repaint();
     }
 
-    // Genera partículas de "foot dust" en la zona de los pies del jugador
     private void spawnFootParticles(Rectangle feet) {
         int numParticles = 2;
         for (int i = 0; i < numParticles; i++) {
-            float x = feet.x + (float)(Math.random() * feet.width);
+            float x = feet.x + (float) (Math.random() * feet.width);
             float y = feet.y + feet.height;
-            float dx = (float)(Math.random() - 0.5);
-            float dy = -(float)(Math.random() * 1 + 0.5f);
+            float dx = (float) (Math.random() - 0.5);
+            float dy = -(float) (Math.random() * 1 + 0.5f);
             float maxLife = 20;
             int colorRGB = 0x777777;
-            float size = 5 + (float)(Math.random() * 3);
+            float size = 5 + (float) (Math.random() * 3);
             footParticles.add(new Particle(x, y, dx, dy, maxLife, colorRGB, size));
-        }
-    }
-
-    private void triggerDeath() {
-        deathTriggered = true;
-        timer.stop();
-        if (backgroundSound != null) {
-            backgroundSound.stop();
-        }
-        player.stop();
-        player.stopWalkingSound();
-
-        Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
-        DeathStyledDialog dsd = new DeathStyledDialog(owner, () -> {
-            player.setPosition(150, initialStartY - player.getHeight());
-            player.stop();
-            player.stopWalkingSound();
-            player.getPlayerState().reset();
-            for (Collectible col : collectibles) {
-                col.setCollected(false);
-            }
-            backgroundSound.playWithFadeIn();
-            timer.start();
-            deathTriggered = false;
-            SwingUtilities.invokeLater(() -> requestFocusInWindow());
-        });
-        dsd.showDialog();
-    }
-
-    private void playCollectSound() {
-        try {
-            URL url = getClass().getResource("/resources/sound/collect/collect.wav");
-            if (url == null) {
-                System.err.println("No se encontró el archivo collect.wav");
-                return;
-            }
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(url);
-            Clip collectClip = AudioSystem.getClip();
-            collectClip.open(audioStream);
-            collectClip.start();
-        } catch (Exception e) {
-            System.err.println("Error al reproducir sonido de recogida: " + e.getMessage());
-        }
-    }
-
-    private void drawOverlayMessages(Graphics2D g2d) {
-        long currentTime = System.currentTimeMillis();
-        if (collectibleMessage != null) {
-            if (currentTime - collectibleMessageStartTime >= COLLECTIBLE_MESSAGE_DURATION) {
-                collectibleMessage = null;
-            } else {
-                int overlayWidth = 400;
-                int overlayHeight = 50;
-                if (collectibleOverlayImg != null) {
-                    g2d.drawImage(collectibleOverlayImg, collectibleMessageX, collectibleMessageY, overlayWidth, overlayHeight, null);
-                } else {
-                    g2d.setColor(new Color(0, 0, 0, 150));
-                    g2d.fillRoundRect(collectibleMessageX, collectibleMessageY, overlayWidth, overlayHeight, 15, 15);
-                }
-                g2d.setColor(Color.WHITE);
-                FontMetrics fm = g2d.getFontMetrics();
-                int textWidth = fm.stringWidth(collectibleMessage);
-                int textX = collectibleMessageX + (overlayWidth - textWidth) / 2;
-                int textY = collectibleMessageY + (overlayHeight + fm.getAscent()) / 2 - 5;
-                g2d.drawString(collectibleMessage, textX, textY);
-            }
-        }
-        if (showInstructions) {
-            long elapsed = currentTime - instructionStartTime;
-            if (elapsed >= INSTRUCTION_DURATION) {
-                showInstructions = false;
-            } else {
-                float alpha = 1.0f;
-                if (elapsed < FADE_IN_DURATION) {
-                    alpha = (float) elapsed / FADE_IN_DURATION;
-                } else if (elapsed > FADE_IN_DURATION + VISIBLE_DURATION) {
-                    long fadeOutElapsed = elapsed - (FADE_IN_DURATION + VISIBLE_DURATION);
-                    alpha = 1.0f - (float) fadeOutElapsed / FADE_OUT_DURATION;
-                }
-                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-                int overlayWidth = 500;
-                int overlayHeight = 80;
-                int instructionsOverlayX = customInstructionsX;
-                int instructionsOverlayY = customInstructionsY;
-                if (instructionsOverlayImg != null) {
-                    g2d.drawImage(instructionsOverlayImg, instructionsOverlayX, instructionsOverlayY, overlayWidth, overlayHeight, null);
-                } else {
-                    g2d.setColor(new Color(0, 0, 0, 200));
-                    g2d.fillRoundRect(instructionsOverlayX, instructionsOverlayY, overlayWidth, overlayHeight, 20, 20);
-                }
-                g2d.setColor(Color.WHITE);
-                String instructionText = "Controles: W para saltar, A para izquierda, D para derecha, SHIFT para dash";
-                FontMetrics fm = g2d.getFontMetrics();
-                int textWidth = fm.stringWidth(instructionText);
-                int textX = instructionsOverlayX + (overlayWidth - textWidth) / 2;
-                int textY = instructionsOverlayY + (overlayHeight + fm.getAscent()) / 2 - 5;
-                g2d.drawString(instructionText, textX, textY);
-                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-            }
         }
     }
 
@@ -478,10 +386,11 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
             case KeyEvent.VK_RIGHT:
                 player.moveRight();
                 break;
-            case KeyEvent.VK_W:
-            case KeyEvent.VK_UP:
-                player.jump();
-                break;
+            // Deshabilitar el salto en esta fase
+            // case KeyEvent.VK_W:
+            // case KeyEvent.VK_UP:
+            //     player.jump();
+            //     break;
             case KeyEvent.VK_S:
             case KeyEvent.VK_DOWN:
                 player.moveDown();
@@ -491,6 +400,7 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
                 break;
         }
     }
+
 
     @Override
     public void keyReleased(KeyEvent e) {
