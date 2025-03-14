@@ -2,66 +2,52 @@ package game.panlesBBDD.modelsIntro.introPack;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 
-/**
- * Representa el panel principal de la introducción del juego.
- * <p>
- * Este panel gestiona la reproducción del audio de introducción y la transición entre
- * la pantalla de título y el menú principal. Además, carga y muestra una imagen de fondo.
- * </p>
- */
 public class IntroMother extends JPanel {
-    private Image backgroundImage; // Imagen de fondo para la introducción.
-    private IntroAudio introAudio; // Controlador para el audio de introducción.
-
-    // Referencias para la transición a otros paneles.
-    private CardLayout outerLayout; // Layout externo para cambiar de paneles.
-    private JPanel outerContainer;  // Contenedor que gestiona los paneles de la aplicación.
+    private Image backgroundImage;
+    private IntroAudio introAudio;
 
     /**
-     * Crea una instancia de IntroMother.
+     * Constructor que recibe el CardLayout y el contenedor externo para gestionar la transición al VideoPanel.
      *
-     * @param outerLayout    CardLayout externo, usado para cambiar de panel en la aplicación.
+     * @param outerLayout    CardLayout externo para cambiar de panel.
      * @param outerContainer Contenedor principal de la aplicación.
      */
     public IntroMother(CardLayout outerLayout, JPanel outerContainer) {
-        this.outerLayout = outerLayout;
-        this.outerContainer = outerContainer;
-
         setLayout(new BorderLayout());
 
-        // Carga la imagen de fondo desde los recursos.
+        // Cargar la imagen de fondo.
         backgroundImage = new ImageIcon("src/resources/imagen/fondoInicio.gif").getImage();
 
-        // Inicializa y reproduce el audio de introducción.
+        // Iniciar el audio de introducción.
         introAudio = new IntroAudio("src/resources/sound/SoundIntro.wav");
         introAudio.start();
 
-        // Configura un CardLayout interno para gestionar la transición entre el título y el menú.
-        CardLayout innerLayout = new CardLayout();
-        JPanel introContainer = new JPanel(innerLayout);
-        introContainer.setOpaque(false);
+        // Crear el panel del título.
+        Titulo titulo = new Titulo();
 
-        // Crea los subpaneles: la pantalla de título y el menú principal.
-        Titulo titulo = new Titulo(innerLayout, introContainer);
-        MenuPanel menuPanel = new MenuPanel(innerLayout, introContainer, introAudio, outerLayout, outerContainer);
+        // Crear el panel del menú y ocultarlo inicialmente.
+        MenuPanel menuPanel = new MenuPanel(introAudio, outerLayout, outerContainer);
+        menuPanel.setVisible(false);
 
-        // Agrega los paneles al contenedor interno.
-        introContainer.add(titulo, "Titulo");
-        introContainer.add(menuPanel, "MenuPanel");
+        // Agregar los paneles: título en la parte superior y menú en el centro.
+        add(titulo, BorderLayout.NORTH);
+        add(menuPanel, BorderLayout.CENTER);
 
-        // Muestra inicialmente el panel del título.
-        innerLayout.show(introContainer, "Titulo");
-
-        // Agrega el contenedor interno al panel principal.
-        add(introContainer, BorderLayout.CENTER);
+        // Timer para mostrar el menú después de 10 segundos.
+        Timer showMenuTimer = new Timer(5000, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                menuPanel.setVisible(true);
+                revalidate();
+                repaint();
+                ((Timer)e.getSource()).stop();
+            }
+        });
+        showMenuTimer.setInitialDelay(9000);
+        showMenuTimer.start();
     }
 
-    /**
-     * Dibuja la imagen de fondo del panel.
-     *
-     * @param g Objeto Graphics utilizado para dibujar.
-     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

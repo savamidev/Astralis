@@ -1,47 +1,38 @@
 package game.panlesBBDD.stageTwo;
 
 import game.controls.movements.GamePanelLevel2;
-import game.controls.movements.GamePanelLevel3;
 import game.listeners.LevelTransitionListener;
+import game.panlesBBDD.stageThree.PrinciPanelLevel3;
 import game.video.TransitionVideoPanel;
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Panel principal para el nivel 2 que gestiona la transición entre el GamePanelLevel2 y el GamePanelLevel3.
- * <p>
- * Cuando se detecta la colisión con el NPC en el GamePanelLevel2, se muestra un panel de video de transición
- * (utilizando TransitionVideoPanel) y, al finalizar el video, se carga el GamePanelLevel3.
- * </p>
- */
 public class PrinciPanelLevel2 extends JPanel {
     private CardLayout cardLayout;
     private JPanel mainContainer;
     private GamePanelLevel2 level2Panel;
 
-    /**
-     * Crea el panel principal para el nivel 2 y configura la transición de paneles.
-     */
     public PrinciPanelLevel2() {
+        System.out.println("PrinciPanelLevel2: Constructor called.");
         cardLayout = new CardLayout();
         mainContainer = new JPanel(cardLayout);
         mainContainer.setPreferredSize(new Dimension(1920, 1080));
+        mainContainer.setFocusable(true);
 
-        // Crear el GamePanel del nivel 2
+        // Crear el GamePanel del nivel 2 y asignarle el listener de transición
         level2Panel = new GamePanelLevel2();
         level2Panel.setBounds(0, 0, 1920, 1080);
 
-        // Asignar el listener de transición para el nivel 2, utilizando TransitionVideoPanel
         level2Panel.setLevelTransitionListener(new LevelTransitionListener() {
             @Override
             public void onLevelTransitionRequested() {
-                // Mostrar el TransitionVideoPanel al dispararse la transición
+                System.out.println("PrinciPanelLevel2: onLevelTransitionRequested called.");
                 TransitionVideoPanel videoPanel = new TransitionVideoPanel(() -> {
-                    // Al terminar el video, cargar el GamePanelLevel3
-                    GamePanelLevel3 level3 = new GamePanelLevel3();
-                    mainContainer.add(level3, "Level3");
-                    cardLayout.show(mainContainer, "Level3");
-                    level3.requestFocusInWindow();
+                    System.out.println("PrinciPanelLevel2: Callback from TransitionVideoPanel. Creating PrinciPanelLevel3.");
+                    PrinciPanelLevel3 principaPanel3 = new PrinciPanelLevel3();
+                    mainContainer.add(principaPanel3, "PrinciPanelLevel3");
+                    cardLayout.show(mainContainer, "PrinciPanelLevel3");
+                    principaPanel3.requestFocusInWindow();
                 });
                 mainContainer.add(videoPanel, "TransitionVideoPanel");
                 cardLayout.show(mainContainer, "TransitionVideoPanel");
@@ -54,22 +45,16 @@ public class PrinciPanelLevel2 extends JPanel {
         add(mainContainer, BorderLayout.CENTER);
     }
 
-    /**
-     * Al añadirse a la ventana, se solicita el foco para que el GamePanelLevel2 capture los eventos de teclado.
-     */
     @Override
     public void addNotify() {
         super.addNotify();
+        // Forzamos que el contenedor y el GamePanelLevel2 tengan el foco
         SwingUtilities.invokeLater(() -> {
+            mainContainer.requestFocusInWindow();
             level2Panel.requestFocusInWindow();
         });
     }
 
-    /**
-     * Método principal para iniciar la aplicación.
-     *
-     * @param args Argumentos de la línea de comandos.
-     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Nivel 2 - Transición");

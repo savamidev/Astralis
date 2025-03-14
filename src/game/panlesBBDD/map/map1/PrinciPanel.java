@@ -1,7 +1,7 @@
 package game.panlesBBDD.stageOne;
 
 import game.controls.movements.GamePanel;
-import game.controls.movements.GamePanelLevel2;
+import game.panlesBBDD.stageTwo.PrinciPanelLevel2;
 import game.listeners.LevelTransitionListener;
 import game.video.VideoPanel;
 import javax.swing.*;
@@ -19,17 +19,17 @@ public class PrinciPanel extends JPanel {
         // Crear el GamePanel del nivel 1
         GamePanel gamePanel = new GamePanel();
         gamePanel.setBounds(0, 0, 1920, 1080);
-        // Asignar el listener de transición
+        // Asignar el listener de transición para pasar al nivel 2
         gamePanel.setLevelTransitionListener(new LevelTransitionListener() {
             @Override
             public void onLevelTransitionRequested() {
-                // Mostrar el VideoPanel al dispararse la transición
+                // Mostrar el VideoPanel de transición
                 VideoPanel videoPanel = new VideoPanel(() -> {
-                    // Al terminar el video, cargar el GamePanelLevel2
-                    GamePanelLevel2 level2 = new GamePanelLevel2();
-                    mainContainer.add(level2, "Level2");
+                    // Al terminar el video, cargar el contenedor de nivel 2 (PrinciPanelLevel2)
+                    PrinciPanelLevel2 panelLevel2 = new PrinciPanelLevel2();
+                    mainContainer.add(panelLevel2, "Level2");
                     cardLayout.show(mainContainer, "Level2");
-                    level2.requestFocusInWindow();
+                    panelLevel2.requestFocusInWindow();
                 });
                 mainContainer.add(videoPanel, "VideoPanel");
                 cardLayout.show(mainContainer, "VideoPanel");
