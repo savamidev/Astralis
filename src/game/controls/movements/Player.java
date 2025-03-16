@@ -5,10 +5,6 @@ import java.awt.*;
 import javax.sound.sampled.*;
 import java.net.URL;
 
-/**
- * Representa al jugador y gestiona sus movimientos, animaciones y acciones.
- * La clase administra estados internos como movimiento, salto, dash, reproducción de sonidos y animaciones.
- */
 public class Player {
 
     private enum State {IDLE, WALKING_LEFT, WALKING_RIGHT, JUMPING_LEFT, JUMPING_RIGHT, FALLING}
@@ -41,14 +37,6 @@ public class Player {
     private PlayerState state;
     private int currentJumpCount;
 
-    // Constantes para frames de animación
-    private static final int COUNT_IDLE = 4;
-    private static final int COUNT_LEFT = 6;
-    private static final int COUNT_RIGHT = 6;
-    private static final int COUNT_JUMP = 6;
-    private static final int COUNT_FALL = 4;
-    private static final long FRAME_DELAY = 300;
-
     // Campos para audio
     private Clip walkingClip;
     private Clip jumpClip;
@@ -58,6 +46,17 @@ public class Player {
     private long dashStartTime = 0;
     private final int DASH_DURATION = 200;
     private final int DASH_SPEED = 20;
+
+    // Bandera para controlar la reproducción del sonido de pisadas
+    private boolean footstepSoundEnabled = true;
+
+    // Constantes para frames de animación
+    private static final int COUNT_IDLE = 4;
+    private static final int COUNT_LEFT = 6;
+    private static final int COUNT_RIGHT = 6;
+    private static final int COUNT_JUMP = 6;
+    private static final int COUNT_FALL = 4;
+    private static final long FRAME_DELAY = 300;
 
     /**
      * Crea una instancia de Player con la posición inicial, el nivel del suelo y el ancho del mundo.
@@ -156,9 +155,9 @@ public class Player {
         }
     }
 
-    // Si el jugador está vivo, se inicia el sonido de pasos.
+    // Inicia el sonido de pisadas si el jugador está vivo y el sonido está habilitado.
     public void startWalkingSound() {
-        if (!alive) return;
+        if (!alive || !footstepSoundEnabled) return;
         if (walkingClip == null) {
             walkingClip = loadClip("/resources/sound/personaje/paso.wav");
         }
@@ -168,7 +167,7 @@ public class Player {
         }
     }
 
-    // Detiene y cierra el clip de pasos.
+    // Detiene y cierra el clip de pisadas.
     public void stopWalkingSound() {
         if (walkingClip != null) {
             if (walkingClip.isActive()) {
@@ -180,6 +179,7 @@ public class Player {
         }
     }
 
+    // Detiene todos los sonidos asociados al jugador.
     public void stopAllSounds() {
         stopWalkingSound();
         if (jumpClip != null && jumpClip.isRunning()) {
@@ -190,11 +190,16 @@ public class Player {
         }
     }
 
+    // Método para deshabilitar el sonido de pisadas, útil durante transiciones.
+    public void disableFootstepSound() {
+        footstepSoundEnabled = false;
+        stopWalkingSound();
+    }
+
     public boolean isJumping() {
         return jumping;
     }
 
-    // Los métodos de movimiento comprueban que el jugador esté vivo.
     public void moveLeft() {
         if (!alive) return;
         dx = -(int)(SPEED * speedMultiplier);
@@ -256,7 +261,6 @@ public class Player {
     }
 
     public void update() {
-        // Si no está vivo, no actualizamos movimientos ni animaciones.
         if (!alive) return;
         updateState();
         currentAnimation.update();
@@ -309,12 +313,13 @@ public class Player {
         }
     }
 
+    // Se ha modificado para comprobar que, además de estar vivo, el sonido de pisadas esté habilitado.
     public void onLanding() {
         if (wasInAir) {
             playLandingSound();
             wasInAir = false;
         }
-        if (dx != 0 && alive) {
+        if (dx != 0 && alive && footstepSoundEnabled) {
             startWalkingSound();
         }
     }
@@ -378,7 +383,6 @@ public class Player {
         speedMultiplier = 1.5;
     }
 
-    // Métodos para controlar la variable alive.
     public void setAlive(boolean alive) {
         this.alive = alive;
         if (!alive) {

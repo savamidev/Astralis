@@ -2,13 +2,12 @@ package game.controls.movements;
 
 import game.audio.BackgroundSound;
 import game.objects.PortalNPC;
-import game.panlesBBDD.map.map1.CollisionManager;
-import game.panlesBBDD.map.map1.DeathStyledDialog;
-import game.panlesBBDD.map.map1.TileMap;
 import game.effects.RainParticle;
 import game.effects.Particle;
 import game.effects.Lightning;
 import game.listeners.LevelTransitionListener;
+import game.panlesBBDD.map.map1.DeathStyledDialog;
+
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -34,8 +33,6 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
     // Elementos del juego
     private Player player;
     private Camera camera;
-    private TileMap tileMap;
-    private CollisionManager collisionManager;
     private Image backgroundImage;
 
     // Audio y NPC
@@ -92,8 +89,7 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         setFocusTraversalKeysEnabled(false);
         addKeyListener(this);
 
-        tileMap = new TileMap("/resources/Map02.csv", 40);
-        collisionManager = new CollisionManager(tileMap);
+        // Se han eliminado TileMap y CollisionManager
 
         player = new Player(150, initialStartY, worldWidth);
         // En este mapa el jugador NO debe tener sandía (solo 1 salto, sin dash)
@@ -165,12 +161,7 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         if (backgroundImage != null) {
             gWorld.drawImage(backgroundImage, 0, 0, worldWidth, worldHeight, this);
         }
-        if (debugMode) {
-            Composite orig = gWorld.getComposite();
-            gWorld.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-            drawTileMap(gWorld);
-            gWorld.setComposite(orig);
-        }
+        // Se eliminó el dibujo del mapa (CSV)
         for (Particle p : footParticles) {
             float alpha = p.getAlpha();
             Color footColor = new Color((p.colorRGB >> 16) & 0xFF,
@@ -231,7 +222,7 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
             long flashPeriod = lightningDuration / 3;
             long mod = elapsedFlash % flashPeriod;
             if (mod < flashPeriod * 0.2) {
-                float flashAlpha = 0.2f * (1 - (float)mod / (flashPeriod * 0.2f));
+                float flashAlpha = 0.2f * (1 - (float) mod / (flashPeriod * 0.2f));
                 Graphics2D gFlash = (Graphics2D) g.create();
                 gFlash.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, flashAlpha));
                 gFlash.setColor(Color.WHITE);
@@ -273,7 +264,7 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
             rainMultiplier = 1.8f;
         }
         RainParticle.speedMultiplier = rainMultiplier;
-        int desiredDrops = (int)(baseRainDrops * rainMultiplier);
+        int desiredDrops = (int) (baseRainDrops * rainMultiplier);
         while (rainParticles.size() < desiredDrops) {
             rainParticles.add(RainParticle.createRandom(worldWidth, worldHeight));
         }
@@ -334,11 +325,25 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         if (!transitionTriggered && player.getCollisionRectangle().intersects(portalNpc.getBounds())) {
             System.out.println("NPC collision detected in GamePanelLevel2");
             transitionTriggered = true;
-            player.stopWalkingSound();
+
+            // Desactivar entrada para evitar reactivación de sonidos
+            removeKeyListener(this);
+
+            // Detener el timer para que no se sigan actualizando movimientos
+            timer.stop();
+
+            // Evitar que se reanude el audio: deshabilitar y marcar al jugador como no vivo
+            player.disableFootstepSound();
+            player.setAlive(false);
             player.stopAllSounds();
+
             if (backgroundSound != null) {
                 backgroundSound.stop();
             }
+            if (lightningClip != null && lightningClip.isRunning()) {
+                lightningClip.stop();
+            }
+
             if (levelTransitionListener != null) {
                 System.out.println("Calling levelTransitionListener.onLevelTransitionRequested()");
                 levelTransitionListener.onLevelTransitionRequested();
@@ -361,13 +366,13 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
     private void spawnFootParticles(Rectangle feet) {
         int numParticles = 2;
         for (int i = 0; i < numParticles; i++) {
-            float x = feet.x + (float)(Math.random() * feet.width);
+            float x = feet.x + (float) (Math.random() * feet.width);
             float y = feet.y + feet.height;
-            float dx = (float)(Math.random() - 0.5);
-            float dy = -(float)(Math.random() * 1 + 0.5f);
+            float dx = (float) (Math.random() - 0.5);
+            float dy = -(float) (Math.random() * 1 + 0.5f);
             float maxLife = 20;
             int colorRGB = 0x777777;
-            float size = 5 + (float)(Math.random() * 3);
+            float size = 5 + (float) (Math.random() * 3);
             footParticles.add(new Particle(x, y, dx, dy, maxLife, colorRGB, size));
         }
     }
@@ -405,7 +410,6 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         switch (key) {
             case KeyEvent.VK_A, KeyEvent.VK_LEFT -> player.moveLeft();
             case KeyEvent.VK_D, KeyEvent.VK_RIGHT -> player.moveRight();
-            case KeyEvent.VK_W, KeyEvent.VK_UP -> player.jump();
             case KeyEvent.VK_S, KeyEvent.VK_DOWN -> player.moveDown();
             case KeyEvent.VK_SHIFT -> player.dash();
         }
@@ -423,26 +427,4 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
 
     @Override
     public void keyTyped(KeyEvent e) { }
-
-    private void drawTileMap(Graphics2D g2d) {
-        int tileSize = tileMap.getTileSize();
-        int[][] tiles = tileMap.getTiles();
-        for (int row = 0; row < tiles.length; row++) {
-            int cols = tiles[row].length;
-            for (int col = 0; col < cols; col++) {
-                int tileType = tiles[row][col];
-                switch (tileType) {
-                    case 0 -> g2d.setColor(new Color(200, 200, 200));
-                    case 1 -> g2d.setColor(Color.DARK_GRAY);
-                    case 2 -> g2d.setColor(Color.BLUE);
-                    case 3 -> g2d.setColor(Color.GREEN);
-                    case 4 -> g2d.setColor(Color.MAGENTA);
-                    default -> g2d.setColor(Color.BLACK);
-                }
-                g2d.fillRect(col * tileSize, row * tileSize, tileSize, tileSize);
-                g2d.setColor(Color.BLACK);
-                g2d.drawRect(col * tileSize, row * tileSize, tileSize, tileSize);
-            }
-        }
-    }
 }

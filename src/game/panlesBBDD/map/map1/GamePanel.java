@@ -295,6 +295,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         // Manejo del NPC Portal y transición:
         // Al colisionar, se activa el mensaje una única vez; pasados 10 segundos se realiza la transición.
         if (!transitionTriggered && player.getCollisionRectangle().intersects(portalNpc.getBounds())) {
+            // Desactivar la entrada para que no se puedan procesar nuevos movimientos
+            removeKeyListener(this);
+            // Detener el movimiento del jugador
+            player.stop();
+
             if (!portalMessageTriggered) {
                 portalNpc.triggerMessage();
                 portalMessageStartTime = System.currentTimeMillis();
@@ -311,6 +316,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 return;
             }
         }
+
 
         Rectangle playerRect = player.getCollisionRectangle();
         startCol = playerRect.x / tileSize;

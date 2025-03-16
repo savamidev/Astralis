@@ -50,7 +50,7 @@ public class VideoIntro extends JFXPanel {
      */
     public void play() {
         Platform.runLater(() -> {
-            String videoPath = new File("src/resources/videos/videoHistoria.mp4").toURI().toString();
+            String videoPath = new File("src/resources/prueba.mp4").toURI().toString();
             Media media = new Media(videoPath);
             mediaPlayer = new MediaPlayer(media);
             MediaView mediaView = new MediaView(mediaPlayer);
