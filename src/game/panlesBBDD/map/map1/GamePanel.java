@@ -56,7 +56,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     private PortalNPC portalNpc;
     private long portalMessageStartTime;
-    private final long PORTAL_MESSAGE_DURATION = 18000; // 10 segundos
+    private final long PORTAL_MESSAGE_DURATION = 18000; // 18 s
     private boolean portalMessageTriggered = false;
 
     private boolean deathTriggered = false;
@@ -98,7 +98,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
 
         backgroundSound = new BackgroundSound("/resources/sound/background/background.wav");
-        // Reemplaza playWithFadeIn() por play() para iniciar el audio a volumen completo
         backgroundSound.play();
 
         collectibles = new ArrayList<>();
@@ -111,7 +110,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         URL houseUrl = getClass().getResource("/resources/imagen/casa.png");
         if (houseUrl != null) {
             houseImage = new ImageIcon(houseUrl).getImage();
-            // Modifica estos valores para colocar la casa donde desees
             houseX = 6100;
             houseY = 45;
         } else {
@@ -149,7 +147,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             g2d.drawImage(backgroundImage, 0, 0, worldWidth, worldHeight, this);
         }
 
-        // Dibujar la casa (modifica houseX y houseY para ajustar la posición)
+        // Dibujar la casa
         if (houseImage != null) {
             g2d.drawImage(houseImage, houseX, houseY, houseImage.getWidth(this), houseImage.getHeight(this), this);
         }
@@ -173,7 +171,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             g2d.fillRect(player.getX(), player.getY(), player.getWidth(), player.getHeight());
         }
 
-        // Se dibuja el NPC, el mensaje se activa internamente una única vez.
+        // Dibujar el NPC (se mantiene activa la entrada de teclas)
         portalNpc.draw(g2d);
 
         leafParticleEffect.draw(g2d);
@@ -259,13 +257,16 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
         }
 
+        // --- Modificación para plataformas: se invoca onLanding() al detectar colisión con el "suelo" de la plataforma ---
         Rectangle feetCollisionRect = player.getFeetRectangle();
         if (player.getDy() >= 0 && collisionManager.isColliding(feetCollisionRect)) {
+            player.onLanding();  // Se llama a onLanding para reproducir el sonido de aterrizaje y reiniciar el sonido de pisadas
             int collisionRow = (feetCollisionRect.y + feetCollisionRect.height) / tileSize;
             int newY = collisionRow * tileSize - player.getHeight();
             player.setPosition(player.getX(), newY);
             player.resetVerticalMotion();
         }
+        // -----------------------------------------------------------------------------------------------
 
         Rectangle collisionRect = player.getCollisionRectangle();
         if (collisionManager.isColliding(collisionRect)) {
@@ -293,13 +294,8 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
 
         // Manejo del NPC Portal y transición:
-        // Al colisionar, se activa el mensaje una única vez; pasados 10 segundos se realiza la transición.
+        // Al colisionar con el NPC se activa el mensaje.
         if (!transitionTriggered && player.getCollisionRectangle().intersects(portalNpc.getBounds())) {
-            // Desactivar la entrada para que no se puedan procesar nuevos movimientos
-            removeKeyListener(this);
-            // Detener el movimiento del jugador
-            player.stop();
-
             if (!portalMessageTriggered) {
                 portalNpc.triggerMessage();
                 portalMessageStartTime = System.currentTimeMillis();
@@ -316,7 +312,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 return;
             }
         }
-
 
         Rectangle playerRect = player.getCollisionRectangle();
         startCol = playerRect.x / tileSize;
@@ -358,7 +353,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             for (Collectible col : collectibles) {
                 col.setCollected(false);
             }
-            // Se reemplaza playWithFadeIn() por play() para iniciar a volumen completo
+            // Reiniciamos las variables del diálogo para que se pueda iniciar de nuevo
+            portalMessageTriggered = false;
+            portalMessageStartTime = 0;
+            transitionTriggered = false;
+
             backgroundSound.play();
             timer.start();
             deathTriggered = false;

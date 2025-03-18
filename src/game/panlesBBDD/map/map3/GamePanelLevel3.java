@@ -158,6 +158,7 @@ public class GamePanelLevel3 extends JPanel implements ActionListener, KeyListen
                 int collisionRow = (feetRect.y + feetRect.height) / tileSize;
                 int correctedY = collisionRow * tileSize - player.getHeight();
                 player.setPosition(newX, correctedY);
+                player.onLanding(); // Se llama onLanding para reproducir el sonido de pisadas al aterrizar
             }
             player.resetVerticalMotion();
         }
@@ -169,7 +170,7 @@ public class GamePanelLevel3 extends JPanel implements ActionListener, KeyListen
         int startRow = playerRect.y / tileSize;
         int endRow = (playerRect.y + playerRect.height) / tileSize;
         boolean collisionWithType2 = false;
-        for (int row = startRow; row <= endRow && !collisionWithType2; row++) {
+        for (int row = startRow; row <= endRow; row++) {
             for (int col = startCol; col <= endCol; col++) {
                 if (tileMap.getTileAt(col * tileSize, row * tileSize) == 2) {
                     collisionWithType2 = true;

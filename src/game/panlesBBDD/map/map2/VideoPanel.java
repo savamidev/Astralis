@@ -21,7 +21,7 @@ public class VideoPanel extends JPanel {
 
     private void initFX() {
         Platform.runLater(() -> {
-            String videoPath = getClass().getResource("/resources/videos/video1.mp4").toExternalForm();
+            String videoPath = getClass().getResource("/resources/videos/videoFase23.mp4").toExternalForm();
             Media media = new Media(videoPath);
             MediaPlayer mediaPlayer = new MediaPlayer(media);
             MediaView mediaView = new MediaView(mediaPlayer);

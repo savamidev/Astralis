@@ -27,7 +27,7 @@ public class TransitionVideoPanel extends JPanel {
         Platform.runLater(() -> {
             try {
                 // Usamos el ClassLoader para mayor consistencia
-                URL url = TransitionVideoPanel.class.getClassLoader().getResource("resources/prueba.mp4");
+                URL url = TransitionVideoPanel.class.getClassLoader().getResource("resources/videos/videoFinal.mp4");
                 System.out.println("TransitionVideoPanel: URL del video: " + url);
                 if(url == null) {
                     System.err.println("TransitionVideoPanel: No se encontró el recurso de video en resources/video.mp4");

@@ -69,7 +69,7 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
     // Zona de advertencia para el rayo
     private boolean warningActive = false;
     private long warningStartTime = 0;
-    private final long warningDuration = 1500; // 3 s
+    private final long warningDuration = 1500; // ms
     private Rectangle warningZone = null;
 
     // Listener para transición
@@ -286,19 +286,34 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
             if (lightningClip != null) {
                 lightningClip.stop();
                 lightningClip.setFramePosition(0);
+                try {
+                    FloatControl gainControl = (FloatControl) lightningClip.getControl(FloatControl.Type.MASTER_GAIN);
+                    gainControl.setValue(0.0f); // Reinicia el volumen al nivel completo
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
                 lightningClip.start();
                 lightningSoundStarted = true;
                 lightningStartTime = currentTime;
             }
             if (player.getCollisionRectangle().intersects(warningZone)) {
-                System.out.println("Player in warning zone. Executing lightning death.");
-                lightningDeath();
+                System.out.println("Player in warning zone. Scheduling lightning death.");
+                // Retrasar la muerte para permitir ver el rayo.
+                Timer delayDeath = new Timer(500, new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent evt) {
+                        lightningDeath();
+                    }
+                });
+                delayDeath.setRepeats(false);
+                delayDeath.start();
             } else {
                 System.out.println("Player avoided warning zone. Lightning appears.");
             }
             warningActive = false;
             nextLightningTime = currentTime + 4000;
         }
+
         if (lightningSoundStarted && lightningClip != null && lightningClip.isRunning()) {
             long fadeStart = lightningStartTime + lightningDuration;
             if (currentTime >= fadeStart) {
