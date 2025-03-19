@@ -265,12 +265,11 @@ El código se organiza en múltiples paquetes, cada uno responsable de aspectos 
 
 _Astralis_ es un juego innovador que integra animaciones fluidas, efectos visuales dinámicos y audio envolvente para ofrecer una experiencia de juego única. La arquitectura modular y el uso de patrones de diseño facilitan su mantenimiento y futuras expansiones, permitiendo la integración de nuevos niveles, efectos y mejoras de rendimiento.
 
-Esta documentación técnica en Markdown abarca desde la visión general y la estructura del proyecto hasta una descripción detallada de cada módulo y el flujo completo del juego. Se espera que este documento sirva de guía para la comprensión, mantenimiento y evolución del proyecto.
 
 ---
 
 **Contacto:**  
-Para consultas o colaboraciones, puedes escribir a [tuemail@dominio.com](mailto:tuemail@dominio.com).
+Para consultas o colaboraciones, puedes contactar a través de nuestros perfiles.
 
 ---
 
