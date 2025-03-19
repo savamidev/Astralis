@@ -2,7 +2,7 @@
 
 > **Versión:** 1.0.0  
 > **Fecha:** 2025-03-19  
-> **Autores:** [savamidev]  
+> **Autores:** [savamidev]  [IsmaVargas] [AngelRagel05]   
 > **Copyright:** © 2025  
 > **Licencia:** Todos los derechos reservados.
 
