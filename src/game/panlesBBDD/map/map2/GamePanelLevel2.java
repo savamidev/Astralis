@@ -21,6 +21,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Representa el panel del juego correspondiente al Nivel 2.
+ * Maneja la actualización y renderización de los elementos propios del nivel (jugador, cámara, partículas de lluvia,
+ * efectos de rayo, zonas de advertencia, transición de nivel, etc.).
+ *
+ * <p>
+ * Nota: Solo se han agregado comentarios para documentación sin modificar ninguna parte funcional del código.
+ * </p>
+ */
 public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListener {
 
     // Parámetros del mundo y fase
@@ -82,6 +91,10 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
     // Efecto de lluvia
     private long rainStartTime = System.currentTimeMillis();
 
+    /**
+     * Crea una instancia de GamePanelLevel2, inicializando el panel, cargando recursos y configurando
+     * los elementos del nivel.
+     */
     public GamePanelLevel2() {
         setPreferredSize(new Dimension(worldWidth, worldHeight));
         setOpaque(false);
@@ -129,6 +142,9 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         footParticles = new ArrayList<>();
     }
 
+    /**
+     * Inicializa las partículas de lluvia.
+     */
     private void initRainParticles() {
         rainParticles = new ArrayList<>();
         for (int i = 0; i < baseRainDrops; i++) {
@@ -136,6 +152,11 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         }
     }
 
+    /**
+     * Asigna el listener para la transición de nivel.
+     *
+     * @param listener Instancia de LevelTransitionListener.
+     */
     public void setLevelTransitionListener(LevelTransitionListener listener) {
         this.levelTransitionListener = listener;
     }
@@ -378,6 +399,11 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         repaint();
     }
 
+    /**
+     * Genera partículas de pisada a partir de la zona de los pies del jugador.
+     *
+     * @param feet Rectángulo que representa la zona de los pies.
+     */
     private void spawnFootParticles(Rectangle feet) {
         int numParticles = 2;
         for (int i = 0; i < numParticles; i++) {
@@ -392,6 +418,9 @@ public class GamePanelLevel2 extends JPanel implements ActionListener, KeyListen
         }
     }
 
+    /**
+     * Ejecuta la secuencia de muerte por rayo.
+     */
     private void lightningDeath() {
         System.out.println("Executing lightning death animation...");
         timer.stop();

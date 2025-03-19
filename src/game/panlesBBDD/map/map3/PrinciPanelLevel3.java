@@ -4,11 +4,19 @@ import game.controls.movements.GamePanelLevel3;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Panel principal para el Nivel 3.
+ * Utiliza un CardLayout para contener el GamePanelLevel3 y gestionar la transición
+ * (en este caso, el panel se muestra de forma independiente).
+ */
 public class PrinciPanelLevel3 extends JPanel {
     private CardLayout cardLayout;
     private JPanel mainContainer;
     private GamePanelLevel3 level3Panel;
 
+    /**
+     * Constructor que configura el contenedor y añade el GamePanelLevel3.
+     */
     public PrinciPanelLevel3() {
         System.out.println("PrinciPanelLevel3: Constructor called.");
         cardLayout = new CardLayout();
@@ -34,7 +42,11 @@ public class PrinciPanelLevel3 extends JPanel {
         });
     }
 
-    // Método main para pruebas independientes
+    /**
+     * Método main para pruebas independientes del panel del Nivel 3.
+     *
+     * @param args Argumentos de línea de comandos (no utilizados).
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Nivel 3 - PrinciPanel");

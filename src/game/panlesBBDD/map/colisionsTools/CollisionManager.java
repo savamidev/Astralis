@@ -1,4 +1,4 @@
-package game.panlesBBDD.map.map1;
+package game.panlesBBDD.map.colisionsTools;
 
 import java.awt.Rectangle;
 import java.util.ArrayList;

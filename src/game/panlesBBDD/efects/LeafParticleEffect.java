@@ -6,12 +6,9 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Simula un efecto de partículas que representan hojas, polvo o viento en el área del mapa.
- * <p>
- * Las partículas se generan dentro de un rango vertical definido (por ejemplo, hasta el floor)
- * y se mantienen un número máximo de partículas. Las propiedades como velocidad, tamaño y
- * color se generan aleatoriamente para lograr un efecto visual natural.
- * </p>
+ * Simula un efecto de partículas que representan hojas o polvo, agregando
+ * dinamismo visual en áreas específicas del mapa.
+ * Genera partículas con propiedades aleatorias para lograr un efecto natural.
  */
 public class LeafParticleEffect {
     private List<game.effects.Particle> particles;
@@ -23,8 +20,8 @@ public class LeafParticleEffect {
     /**
      * Crea un nuevo efecto de partículas para hojas.
      *
-     * @param worldWidth   Ancho del mundo, para determinar la posición horizontal aleatoria.
-     * @param maxY         Altura máxima en la que pueden aparecer las partículas.
+     * @param worldWidth   Ancho del mundo, usado para posicionar las partículas horizontalmente.
+     * @param maxY         Altura máxima en la que pueden generarse las partículas.
      * @param maxParticles Número máximo de partículas simultáneas.
      */
     public LeafParticleEffect(int worldWidth, int maxY, int maxParticles) {
@@ -59,10 +56,10 @@ public class LeafParticleEffect {
     /**
      * Genera una nueva partícula con propiedades aleatorias:
      * <ul>
-     *     <li>Tamaño entre 3 y 7.</li>
+     *     <li>Tamaño entre 3 y 7 píxeles.</li>
      *     <li>Posición aleatoria dentro del ancho del mundo y hasta {@code maxY}.</li>
      *     <li>Velocidad aleatoria en ambos ejes.</li>
-     *     <li>Vida aleatoria entre 60 y 120 frames.</li>
+     *     <li>Vida entre 60 y 120 frames.</li>
      *     <li>Color basado en tonalidades otoñales.</li>
      * </ul>
      */
@@ -86,9 +83,9 @@ public class LeafParticleEffect {
     }
 
     /**
-     * Dibuja todas las partículas en el objeto gráfico proporcionado.
+     * Dibuja todas las partículas en el contexto gráfico proporcionado.
      *
-     * @param g2d Objeto Graphics2D utilizado para el dibujo.
+     * @param g2d Objeto Graphics2D utilizado para renderizar las partículas.
      */
     public void draw(Graphics2D g2d) {
         for (game.effects.Particle p : particles) {

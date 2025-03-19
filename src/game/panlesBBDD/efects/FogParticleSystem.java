@@ -5,6 +5,11 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Sistema de partículas que simula el efecto de niebla en el juego.
+ * Genera y actualiza partículas dentro de un área definida, aplicando interacciones
+ * de repulsión cuando el jugador se acerca.
+ */
 public class FogParticleSystem {
     private List<game.effects.Particle> particles;
     private int spawnTop;    // Parte superior del área de niebla = floorY - offsetAbove
@@ -12,6 +17,13 @@ public class FogParticleSystem {
     private int spawnWidth;  // Ancho en el que se generan las partículas
     private int spawnCount;  // Número de partículas que se generan en cada actualización
 
+    /**
+     * Construye un sistema de partículas de niebla.
+     *
+     * @param floorY     Posición Y del suelo.
+     * @param offsetAbove Desplazamiento vertical hacia arriba desde el suelo para iniciar la niebla.
+     * @param spawnBottom Posición Y inferior donde pueden aparecer las partículas.
+     */
     public FogParticleSystem(int floorY, int offsetAbove, int spawnBottom) {
         // El área de niebla se extiende desde floorY - offsetAbove hasta spawnBottom.
         this.spawnTop = floorY - offsetAbove;
@@ -21,15 +33,30 @@ public class FogParticleSystem {
         spawnCount = 10;   // Genera 10 partículas por frame para mayor densidad
     }
 
+    /**
+     * Establece el ancho de la zona de generación de partículas.
+     *
+     * @param width Ancho en píxeles.
+     */
     public void setSpawnWidth(int width) {
         this.spawnWidth = width;
     }
 
-    // Permite ajustar la cantidad de partículas a generar por actualización
+    /**
+     * Establece la cantidad de partículas a generar en cada actualización.
+     *
+     * @param count Número de partículas.
+     */
     public void setSpawnCount(int count) {
         this.spawnCount = count;
     }
 
+    /**
+     * Actualiza las partículas existentes y genera nuevas partículas.
+     * Aplica un efecto de repulsión si el jugador se encuentra cerca de una partícula.
+     *
+     * @param player Referencia al jugador para calcular interacciones.
+     */
     public void update(Player player) {
         int playerCenterX = player.getX() + player.getWidth() / 2;
         int playerCenterY = player.getY() + player.getHeight() / 2;
@@ -53,7 +80,9 @@ public class FogParticleSystem {
         spawnParticles();
     }
 
-    // Genera múltiples partículas de niebla dentro del área definida
+    /**
+     * Genera partículas de niebla de forma aleatoria dentro del área definida.
+     */
     private void spawnParticles() {
         for (int i = 0; i < spawnCount; i++) {
             int x = (int)(Math.random() * spawnWidth);
@@ -70,6 +99,11 @@ public class FogParticleSystem {
         }
     }
 
+    /**
+     * Dibuja las partículas de niebla en el contexto gráfico proporcionado.
+     *
+     * @param g2 Objeto Graphics2D utilizado para el dibujo.
+     */
     public void draw(Graphics2D g2) {
         for (game.effects.Particle p : particles) {
             float alpha = p.getAlpha();

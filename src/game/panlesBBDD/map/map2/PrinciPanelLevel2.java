@@ -7,11 +7,20 @@ import game.video.TransitionVideoPanel;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Panel principal para el Nivel 2.
+ * Utiliza un CardLayout para gestionar la transición entre el GamePanelLevel2 y la fase de transición mediante video,
+ * pasando luego al Nivel 3.
+ */
 public class PrinciPanelLevel2 extends JPanel {
     private CardLayout cardLayout;
     private JPanel mainContainer;
     private GamePanelLevel2 level2Panel;
 
+    /**
+     * Constructor que configura el contenedor y añade el panel del Nivel 2.
+     * También asigna el listener para la transición al siguiente nivel.
+     */
     public PrinciPanelLevel2() {
         System.out.println("PrinciPanelLevel2: Constructor called.");
         cardLayout = new CardLayout();
@@ -29,10 +38,10 @@ public class PrinciPanelLevel2 extends JPanel {
                 System.out.println("PrinciPanelLevel2: onLevelTransitionRequested called.");
                 TransitionVideoPanel videoPanel = new TransitionVideoPanel(() -> {
                     System.out.println("PrinciPanelLevel2: Callback from TransitionVideoPanel. Creating PrinciPanelLevel3.");
-                    PrinciPanelLevel3 principaPanel3 = new PrinciPanelLevel3();
-                    mainContainer.add(principaPanel3, "PrinciPanelLevel3");
+                    PrinciPanelLevel3 panelLevel3 = new PrinciPanelLevel3();
+                    mainContainer.add(panelLevel3, "PrinciPanelLevel3");
                     cardLayout.show(mainContainer, "PrinciPanelLevel3");
-                    principaPanel3.requestFocusInWindow();
+                    panelLevel3.requestFocusInWindow();
                 });
                 mainContainer.add(videoPanel, "TransitionVideoPanel");
                 cardLayout.show(mainContainer, "TransitionVideoPanel");
@@ -55,6 +64,21 @@ public class PrinciPanelLevel2 extends JPanel {
         });
     }
 
+    /**
+     * Fuerza la actualización de la interfaz de todos los componentes contenidos.
+     */
+    public void repaintAll() {
+        for (Component component : getComponents()) {
+            component.repaint();
+        }
+        repaint();
+    }
+
+    /**
+     * Método main para ejecutar el panel de Nivel 2 de forma independiente.
+     *
+     * @param args Argumentos de línea de comandos (no utilizados).
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Nivel 2 - Transición");

@@ -7,10 +7,19 @@ import javafx.embed.swing.JFXPanel;
 import javafx.scene.*;
 import javafx.scene.media.*;
 
+/**
+ * Panel que integra un reproductor de video utilizando JavaFX embebido en Swing.
+ * Reproduce un video y ejecuta una acción al finalizar la reproducción.
+ */
 public class VideoPanel extends JPanel {
     private JFXPanel jfxPanel;
     private Runnable onVideoFinished;
 
+    /**
+     * Crea el VideoPanel y establece el callback que se ejecutará al terminar el video.
+     *
+     * @param onVideoFinished Acción a ejecutar al finalizar el video.
+     */
     public VideoPanel(Runnable onVideoFinished) {
         this.onVideoFinished = onVideoFinished;
         setLayout(new BorderLayout());
@@ -19,9 +28,12 @@ public class VideoPanel extends JPanel {
         initFX();
     }
 
+    /**
+     * Inicializa el entorno JavaFX, carga y reproduce el video.
+     */
     private void initFX() {
         Platform.runLater(() -> {
-            String videoPath = getClass().getResource("/resources/videos/videoFase23.mp4").toExternalForm();
+            String videoPath = getClass().getResource("/resources/videos/video1.mp4").toExternalForm();
             Media media = new Media(videoPath);
             MediaPlayer mediaPlayer = new MediaPlayer(media);
             MediaView mediaView = new MediaView(mediaPlayer);

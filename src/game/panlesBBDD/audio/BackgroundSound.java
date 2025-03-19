@@ -4,11 +4,8 @@ import javax.sound.sampled.*;
 import java.net.URL;
 
 /**
- * Gestiona el sonido de fondo del juego.
- * <p>
- * Esta clase carga un clip de audio desde un recurso y lo reproduce en bucle.
- * Se puede iniciar con un efecto de fade‑in o directamente a volumen completo.
- * </p>
+ * Gestiona el sonido de fondo del juego, permitiendo reproducir audio en bucle
+ * con o sin efecto de fade‑in.
  */
 public class BackgroundSound {
     private Clip clip;
@@ -20,7 +17,7 @@ public class BackgroundSound {
     private final int FADE_INTERVAL = 200;
 
     /**
-     * Crea una instancia de BackgroundSound cargando el clip de audio desde la ruta especificada.
+     * Crea una instancia de BackgroundSound y carga el clip de audio desde la ruta especificada.
      *
      * @param path Ruta del recurso de audio (por ejemplo, "/resources/sound/background.wav").
      */
@@ -42,8 +39,8 @@ public class BackgroundSound {
     }
 
     /**
-     * Inicia la reproducción en bucle del sonido de fondo con efecto fade‑in.
-     * Este método aumenta progresivamente el volumen hasta llegar al máximo.
+     * Inicia la reproducción en bucle del sonido de fondo aplicando un efecto de fade‑in.
+     * Incrementa progresivamente el volumen hasta alcanzar el máximo.
      */
     public void playWithFadeIn() {
         if (clip == null) {
@@ -69,7 +66,7 @@ public class BackgroundSound {
     }
 
     /**
-     * Reproduce el sonido de fondo a volumen completo sin efecto fade‑in.
+     * Reproduce el sonido de fondo en bucle a volumen máximo, sin efecto de fade‑in.
      */
     public void play() {
         if (clip == null) {

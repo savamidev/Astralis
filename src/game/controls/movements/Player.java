@@ -5,6 +5,10 @@ import java.awt.*;
 import javax.sound.sampled.*;
 import java.net.URL;
 
+/**
+ * Representa al jugador en el juego, gestionando sus movimientos, animaciones,
+ * sonidos y colisiones, así como el estado interno durante la partida.
+ */
 public class Player {
 
     private enum State {IDLE, WALKING_LEFT, WALKING_RIGHT, JUMPING_LEFT, JUMPING_RIGHT, FALLING}
@@ -60,6 +64,10 @@ public class Player {
 
     /**
      * Crea una instancia de Player con la posición inicial, el nivel del suelo y el ancho del mundo.
+     *
+     * @param startX    Posición inicial en X del jugador.
+     * @param floorY    Coordenada Y del suelo.
+     * @param worldWidth Ancho total del mundo.
      */
     public Player(int startX, int floorY, int worldWidth) {
         this.x = startX;
@@ -88,6 +96,15 @@ public class Player {
         this.y = floorY - height;
     }
 
+    /**
+     * Carga y escala las imágenes para una animación a partir de una ruta base.
+     *
+     * @param basePath Ruta base de los archivos de imagen.
+     * @param count    Número de imágenes (frames) a cargar.
+     * @param newWidth Ancho al que se escalarán las imágenes.
+     * @param newHeight Alto al que se escalarán las imágenes.
+     * @return Array de imágenes escaladas.
+     */
     private Image[] loadAnimationImages(String basePath, int count, int newWidth, int newHeight) {
         Image[] frames = new Image[count];
         for (int i = 1; i <= count; i++) {
@@ -102,6 +119,10 @@ public class Player {
         return frames;
     }
 
+    /**
+     * Actualiza el estado interno del jugador y selecciona la animación adecuada
+     * según la dirección y acción (caminar, saltar, caer, etc.).
+     */
     private void updateState() {
         if (jumping) {
             if (dx < 0)
@@ -138,6 +159,12 @@ public class Player {
         }
     }
 
+    /**
+     * Carga un clip de audio desde el recurso especificado.
+     *
+     * @param path Ruta del recurso de audio.
+     * @return El clip de audio cargado, o {@code null} si ocurre un error.
+     */
     private Clip loadClip(String path) {
         try {
             URL url = getClass().getResource(path);
@@ -155,7 +182,9 @@ public class Player {
         }
     }
 
-    // Inicia el sonido de pisadas si el jugador está vivo y el sonido está habilitado.
+    /**
+     * Inicia la reproducción del sonido de pisadas si el jugador está vivo y el sonido está habilitado.
+     */
     public void startWalkingSound() {
         if (!alive || !footstepSoundEnabled) return;
         if (walkingClip == null) {
@@ -167,7 +196,9 @@ public class Player {
         }
     }
 
-    // Detiene y cierra el clip de pisadas.
+    /**
+     * Detiene y cierra el clip de audio de pisadas.
+     */
     public void stopWalkingSound() {
         if (walkingClip != null) {
             if (walkingClip.isActive()) {
@@ -179,7 +210,9 @@ public class Player {
         }
     }
 
-    // Detiene todos los sonidos asociados al jugador.
+    /**
+     * Detiene todos los sonidos asociados al jugador, incluyendo el de salto y pisadas.
+     */
     public void stopAllSounds() {
         stopWalkingSound();
         if (jumpClip != null && jumpClip.isRunning()) {
@@ -190,16 +223,26 @@ public class Player {
         }
     }
 
-    // Método para deshabilitar el sonido de pisadas, útil durante transiciones.
+    /**
+     * Deshabilita el sonido de pisadas, útil para gestionar transiciones en el juego.
+     */
     public void disableFootstepSound() {
         footstepSoundEnabled = false;
         stopWalkingSound();
     }
 
+    /**
+     * Indica si el jugador se encuentra en estado de salto.
+     *
+     * @return {@code true} si el jugador está saltando; {@code false} en caso contrario.
+     */
     public boolean isJumping() {
         return jumping;
     }
 
+    /**
+     * Mueve al jugador hacia la izquierda y activa el sonido de pisadas si no está saltando.
+     */
     public void moveLeft() {
         if (!alive) return;
         dx = -(int)(SPEED * speedMultiplier);
@@ -208,6 +251,9 @@ public class Player {
         }
     }
 
+    /**
+     * Mueve al jugador hacia la derecha y activa el sonido de pisadas si no está saltando.
+     */
     public void moveRight() {
         if (!alive) return;
         dx = (int)(SPEED * speedMultiplier);
@@ -216,15 +262,28 @@ public class Player {
         }
     }
 
+    /**
+     * Detiene el movimiento horizontal del jugador y detiene el sonido de pisadas.
+     */
     public void stop() {
         dx = 0;
         stopWalkingSound();
     }
 
+    /**
+     * Método sin implementación para mover al jugador hacia abajo.
+     */
     public void moveDown() { }
 
+    /**
+     * Método sin implementación para detener el movimiento hacia abajo.
+     */
     public void stopDown() { }
 
+    /**
+     * Realiza un salto si el jugador está vivo y tiene saltos disponibles.
+     * Reproduce el sonido de salto y actualiza el estado físico.
+     */
     public void jump() {
         if (!alive) return;
         int availableJumps = state.hasSandia() ? 2 : 1;
@@ -244,6 +303,9 @@ public class Player {
         }
     }
 
+    /**
+     * Reproduce el sonido de aterrizaje y actualiza el estado interno al aterrizar.
+     */
     private void playLandingSound() {
         try {
             URL url = getClass().getResource("/resources/sound/personaje/landing.wav");
@@ -260,6 +322,10 @@ public class Player {
         }
     }
 
+    /**
+     * Actualiza la posición, animaciones, física y estados del jugador.
+     * Gestiona la gravedad, colisiones con el suelo y finalización de dash.
+     */
     public void update() {
         if (!alive) return;
         updateState();
@@ -295,6 +361,10 @@ public class Player {
         x = Math.max(0, Math.min(x, worldWidth - width));
     }
 
+    /**
+     * Realiza un movimiento rápido (dash) si el jugador está vivo y posee la sandía.
+     * El dash se activa y finaliza en función de la duración definida.
+     */
     public void dash() {
         if (!alive) return;
         if (!state.hasSandia()) {
@@ -313,7 +383,9 @@ public class Player {
         }
     }
 
-    // Se ha modificado para comprobar que, además de estar vivo, el sonido de pisadas esté habilitado.
+    /**
+     * Gestiona las acciones al aterrizar, reproduciendo el sonido correspondiente y reactivando el sonido de pisadas.
+     */
     public void onLanding() {
         if (wasInAir) {
             playLandingSound();
@@ -324,6 +396,11 @@ public class Player {
         }
     }
 
+    /**
+     * Retorna el rectángulo de colisión del jugador para detectar colisiones con otros objetos.
+     *
+     * @return Un objeto Rectangle que representa la hitbox del jugador.
+     */
     public Rectangle getCollisionRectangle() {
         int hitboxWidth = width / 3;
         int hitboxHeight = height - 40;
@@ -332,6 +409,12 @@ public class Player {
         return new Rectangle(hitboxX, hitboxY, hitboxWidth, hitboxHeight);
     }
 
+    /**
+     * Retorna el rectángulo correspondiente a la zona de los pies del jugador,
+     * utilizado para detectar colisiones con el suelo.
+     *
+     * @return Un objeto Rectangle representando la zona de los pies.
+     */
     public Rectangle getFeetRectangle() {
         int feetWidth = width / 2;
         int feetHeight = 5;
@@ -340,6 +423,12 @@ public class Player {
         return new Rectangle(feetX, feetY, feetWidth, feetHeight);
     }
 
+    /**
+     * Retorna el rectángulo que representa la zona de la cabeza del jugador,
+     * utilizado para detectar colisiones superiores.
+     *
+     * @return Un objeto Rectangle correspondiente a la cabeza.
+     */
     public Rectangle getHeadRectangle() {
         int headWidth = width / 4;
         int headHeight = 1;
@@ -348,41 +437,98 @@ public class Player {
         return new Rectangle(headX, headY, headWidth, headHeight);
     }
 
+    /**
+     * Retorna el ancho del jugador.
+     *
+     * @return Ancho en píxeles.
+     */
     public int getWidth() { return width; }
 
+    /**
+     * Retorna el alto del jugador.
+     *
+     * @return Alto en píxeles.
+     */
     public int getHeight() { return height; }
 
+    /**
+     * Establece la posición del jugador.
+     *
+     * @param newX Nueva coordenada X.
+     * @param newY Nueva coordenada Y.
+     */
     public void setPosition(int newX, int newY) {
         this.x = newX;
         this.y = newY;
     }
 
+    /**
+     * Obtiene la coordenada X actual del jugador.
+     *
+     * @return Valor de X en píxeles.
+     */
     public int getX() { return x; }
 
+    /**
+     * Obtiene la coordenada Y actual del jugador.
+     *
+     * @return Valor de Y en píxeles.
+     */
     public int getY() { return y; }
 
+    /**
+     * Retorna la imagen actual del jugador según la animación activa.
+     *
+     * @return La imagen correspondiente al frame actual, o {@code null} si no hay animación.
+     */
     public Image getImage() {
         return (currentAnimation != null) ? currentAnimation.getCurrentFrame() : null;
     }
 
+    /**
+     * Retorna el estado actual del jugador, que incluye información sobre vidas y objetos.
+     *
+     * @return Una instancia de {@link PlayerState} con el estado del jugador.
+     */
     public PlayerState getPlayerState() { return state; }
 
+    /**
+     * Obtiene la velocidad vertical actual del jugador.
+     *
+     * @return Valor de la velocidad vertical (dy).
+     */
     public int getDy() { return dy; }
 
+    /**
+     * Reinicia el movimiento vertical del jugador, deteniendo el salto y reseteando la cuenta de saltos.
+     */
     public void resetVerticalMotion() {
         dy = 0;
         jumping = false;
         currentJumpCount = 0;
     }
 
+    /**
+     * Obtiene la velocidad horizontal actual del jugador.
+     *
+     * @return Valor de la velocidad horizontal (dx).
+     */
     public int getDx() {
         return dx;
     }
 
+    /**
+     * Aplica el efecto de las botas, incrementando el multiplicador de velocidad.
+     */
     public void applyBoots() {
         speedMultiplier = 1.5;
     }
 
+    /**
+     * Establece el estado "vivo" del jugador y detiene los sonidos activos si se indica que ha muerto.
+     *
+     * @param alive {@code true} si el jugador está vivo; {@code false} en caso contrario.
+     */
     public void setAlive(boolean alive) {
         this.alive = alive;
         if (!alive) {
@@ -390,6 +536,11 @@ public class Player {
         }
     }
 
+    /**
+     * Indica si el jugador se encuentra vivo.
+     *
+     * @return {@code true} si el jugador está vivo; {@code false} en caso contrario.
+     */
     public boolean isAlive() {
         return alive;
     }

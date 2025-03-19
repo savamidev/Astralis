@@ -5,11 +5,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Simula el efecto visual de hierba en movimiento, generando partículas que representan
+ * hojas o pasto que emergen del suelo (normalmente en los pies del jugador).
+ */
 public class RunGrassEffect {
     private List<game.effects.Particle> particles;
     private Random random;
     private int maxParticles;
 
+    /**
+     * Crea un efecto de hierba con un número máximo de partículas.
+     *
+     * @param maxParticles Número máximo de partículas simultáneas.
+     */
     public RunGrassEffect(int maxParticles) {
         this.maxParticles = maxParticles;
         particles = new ArrayList<>();
@@ -20,6 +29,7 @@ public class RunGrassEffect {
      * Genera partículas desde el origen dado (normalmente los pies del jugador).
      * Se generan 3 partículas por llamada.
      * Los tonos de verde varían entre un verde oscuro y un verde medio.
+     *
      * @param originX Coordenada X de origen.
      * @param originY Coordenada Y de origen.
      */
@@ -42,6 +52,9 @@ public class RunGrassEffect {
         }
     }
 
+    /**
+     * Actualiza el estado de todas las partículas y elimina aquellas que han expirado.
+     */
     public void update() {
         for (int i = particles.size() - 1; i >= 0; i--) {
             game.effects.Particle p = particles.get(i);
@@ -52,6 +65,11 @@ public class RunGrassEffect {
         }
     }
 
+    /**
+     * Dibuja todas las partículas de hierba en el contexto gráfico proporcionado.
+     *
+     * @param g2d Objeto Graphics2D utilizado para renderizar las partículas.
+     */
     public void draw(Graphics2D g2d) {
         for (game.effects.Particle p : particles) {
             Color baseColor = new Color(p.colorRGB);

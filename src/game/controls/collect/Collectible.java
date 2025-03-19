@@ -6,15 +6,16 @@ import java.awt.Rectangle;
 import javax.swing.ImageIcon;
 
 /**
- * Representa un objeto coleccionable en el juego, como una sandía, una llave o unas botas.
- * Los coleccionables tienen un efecto de oscilación vertical para darles dinamismo.
+ * Representa un objeto coleccionable en el juego que el jugador puede recolectar,
+ * como una sandía, una llave o unas botas. Su posición vertical oscila para proporcionar
+ * un efecto visual dinámico y atractivo.
  *
  * @author
  */
 public class Collectible {
 
     /**
-     * Enumeración que define los tipos de coleccionable.
+     * Define los tipos disponibles para los objetos coleccionables.
      */
     public enum Type {
         SANDIA,
@@ -35,11 +36,11 @@ public class Collectible {
     private int direction = 1;
 
     /**
-     * Crea un nuevo objeto coleccionable con las características especificadas.
+     * Construye un nuevo objeto coleccionable con las características y recurso de imagen especificados.
      *
-     * @param type      Tipo del objeto (SANDIA, BOTAS, etc.).
-     * @param x         Coordenada X en la que se posicionará el objeto.
-     * @param y         Coordenada base en Y en la que se posicionará el objeto.
+     * @param type      Tipo del coleccionable (ej. SANDIA, BOTAS).
+     * @param x         Coordenada X donde se posicionará el objeto.
+     * @param y         Coordenada base en Y para la posición del objeto.
      * @param width     Ancho del objeto.
      * @param height    Alto del objeto.
      * @param imagePath Ruta del recurso de imagen.
@@ -60,8 +61,8 @@ public class Collectible {
     }
 
     /**
-     * Actualiza la posición vertical para crear un efecto de oscilación.
-     * Este método modifica internamente el offset que se suma a la posición base Y.
+     * Actualiza el estado del objeto aplicando un efecto de oscilación vertical.
+     * El método modifica el offset vertical para simular un movimiento de vaivén.
      */
     public void update() {
         if (!collected) {
@@ -73,10 +74,10 @@ public class Collectible {
     }
 
     /**
-     * Dibuja el coleccionable en el componente gráfico.
-     * Solo se dibuja si el objeto no ha sido recogido y si la imagen está cargada.
+     * Dibuja el objeto coleccionable en el contexto gráfico especificado.
+     * Solo se dibuja si el objeto no ha sido recolectado y la imagen se cargó correctamente.
      *
-     * @param g Objeto Graphics sobre el que se realiza el dibujo.
+     * @param g Objeto Graphics utilizado para el renderizado.
      */
     public void draw(Graphics g) {
         if (!collected && image != null) {
@@ -86,9 +87,9 @@ public class Collectible {
     }
 
     /**
-     * Retorna el área de colisión del objeto.
+     * Retorna el área de colisión del objeto, considerando el efecto de oscilación.
      *
-     * @return Un objeto Rectangle que representa los límites del coleccionable.
+     * @return Un objeto Rectangle que define los límites de colisión.
      */
     public Rectangle getBounds() {
         int yPos = baseY + Math.round(currentOffset);
@@ -96,27 +97,27 @@ public class Collectible {
     }
 
     /**
-     * Establece el estado de recogida del objeto.
+     * Define el estado de recogida del objeto.
      *
-     * @param collected {@code true} si el objeto ha sido recogido; {@code false} en caso contrario.
+     * @param collected {@code true} si el objeto ha sido recolectado, {@code false} en caso contrario.
      */
     public void setCollected(boolean collected) {
         this.collected = collected;
     }
 
     /**
-     * Indica si el objeto ya fue recogido.
+     * Indica si el objeto ya ha sido recolectado.
      *
-     * @return {@code true} si ya ha sido recogido; {@code false} de lo contrario.
+     * @return {@code true} si el objeto fue recolectado, {@code false} de lo contrario.
      */
     public boolean isCollected() {
         return collected;
     }
 
     /**
-     * Retorna el tipo de coleccionable.
+     * Obtiene el tipo del objeto coleccionable.
      *
-     * @return El valor de la enumeración {@link Type} que representa el tipo del objeto.
+     * @return Valor de {@link Type} que representa el tipo del objeto.
      */
     public Type getType() {
         return type;

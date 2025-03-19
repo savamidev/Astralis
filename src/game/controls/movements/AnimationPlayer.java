@@ -4,10 +4,7 @@ import java.awt.Image;
 
 /**
  * Gestiona la animación de un conjunto de imágenes (frames) para un objeto.
- * <p>
- * Esta clase actualiza el frame actual en función de un retraso temporal,
- * permitiendo reproducir animaciones de forma cíclica.
- * </p>
+ * Actualiza el frame actual basado en un retraso temporal para reproducir la animación de forma cíclica.
  */
 public class AnimationPlayer {
     private Image[] frames;
@@ -16,10 +13,10 @@ public class AnimationPlayer {
     private long delay;
 
     /**
-     * Crea una instancia de AnimationPlayer con los frames y el retraso especificado.
+     * Inicializa el reproductor de animación con los frames y el intervalo de cambio especificados.
      *
-     * @param frames Array de imágenes que representan los diferentes frames de la animación.
-     * @param delay  Tiempo en milisegundos entre cada cambio de frame.
+     * @param frames Array de imágenes que constituyen la secuencia de la animación.
+     * @param delay  Intervalo de tiempo en milisegundos entre cada cambio de frame.
      */
     public AnimationPlayer(Image[] frames, long delay) {
         this.frames = frames;
@@ -30,7 +27,7 @@ public class AnimationPlayer {
 
     /**
      * Actualiza el frame actual de la animación basándose en el tiempo transcurrido.
-     * Si ha pasado el tiempo definido en {@code delay}, se avanza al siguiente frame de forma cíclica.
+     * Si ha pasado el intervalo de tiempo definido, se avanza al siguiente frame de forma cíclica.
      */
     public void update() {
         long now = System.currentTimeMillis();
@@ -41,9 +38,9 @@ public class AnimationPlayer {
     }
 
     /**
-     * Obtiene la imagen del frame actual de la animación.
+     * Obtiene la imagen correspondiente al frame actual de la animación.
      *
-     * @return La imagen correspondiente al frame actual.
+     * @return Imagen del frame actual.
      */
     public Image getCurrentFrame() {
         return frames[currentFrame];

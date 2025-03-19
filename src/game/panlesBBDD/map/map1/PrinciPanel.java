@@ -7,10 +7,18 @@ import game.video.VideoPanel;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Panel principal que administra la transición entre niveles.
+ * Inicialmente muestra el GamePanel del Nivel 1 y, mediante un CardLayout,
+ * permite la transición al Nivel 2 tras ciertos eventos (por ejemplo, finalización de un video).
+ */
 public class PrinciPanel extends JPanel {
     private CardLayout cardLayout;
     private JPanel mainContainer;
 
+    /**
+     * Constructor que configura el contenedor principal y añade los paneles correspondientes.
+     */
     public PrinciPanel() {
         cardLayout = new CardLayout();
         mainContainer = new JPanel(cardLayout);
@@ -50,6 +58,9 @@ public class PrinciPanel extends JPanel {
         });
     }
 
+    /**
+     * Fuerza la actualización de la interfaz de todos los componentes contenidos.
+     */
     public void repaintAll() {
         for (Component component : getComponents()) {
             component.repaint();
@@ -57,6 +68,11 @@ public class PrinciPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Método main para ejecutar el panel principal en un JFrame.
+     *
+     * @param args Argumentos de línea de comandos (no utilizados).
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Nivel 1");

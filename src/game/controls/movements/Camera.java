@@ -1,11 +1,8 @@
 package game.controls.movements;
 
 /**
- * Representa la cámara que sigue al jugador en el juego.
- * <p>
- * La cámara calcula el desplazamiento horizontal para centrar al jugador en la pantalla.
- * El desplazamiento vertical se mantiene fijo, centrado en el mundo.
- * </p>
+ * Representa la cámara que sigue al jugador, calculando los desplazamientos necesarios
+ * para centrar al jugador en el área visible sin salirse de los límites del mundo.
  */
 public class Camera {
     private Player player;
@@ -15,11 +12,11 @@ public class Camera {
     private int worldHeight;
 
     /**
-     * Crea una nueva instancia de Camera.
+     * Construye una nueva instancia de Camera.
      *
-     * @param player       El jugador a seguir.
+     * @param player       Referencia al jugador que la cámara seguirá.
      * @param screenWidth  Ancho del área visible (pantalla).
-     * @param screenHeight Altura del área visible (pantalla).
+     * @param screenHeight Alto del área visible (pantalla).
      * @param worldWidth   Ancho total del mundo del juego.
      * @param worldHeight  Altura total del mundo del juego.
      */
@@ -33,9 +30,9 @@ public class Camera {
 
     /**
      * Calcula el desplazamiento horizontal (offset X) para centrar al jugador en la pantalla.
-     * Si el mundo es más pequeño que la pantalla, centra la vista.
+     * Si el mundo es menor que la pantalla, centra la vista.
      *
-     * @return El offset horizontal.
+     * @return Valor del offset horizontal.
      */
     public int getOffsetX() {
         if (worldWidth <= screenWidth) {
@@ -48,17 +45,17 @@ public class Camera {
     }
 
     /**
-     * Devuelve un offset vertical fijo, centrado en el mundo.
-     * Esto permite que la cámara no siga los movimientos verticales del jugador (por ejemplo, saltos).
+     * Retorna un offset vertical fijo que centra la vista en el mundo,
+     * sin seguir los movimientos verticales del jugador.
      *
-     * @return El offset vertical.
+     * @return Valor del offset vertical.
      */
     public int getOffsetY() {
         return (worldHeight - screenHeight) / 2;
     }
 
     /**
-     * Actualiza las dimensiones del área visible (pantalla).
+     * Actualiza las dimensiones del área visible.
      *
      * @param width  Nuevo ancho de la pantalla.
      * @param height Nueva altura de la pantalla.

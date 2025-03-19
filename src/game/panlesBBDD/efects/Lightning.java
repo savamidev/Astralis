@@ -6,24 +6,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Genera y gestiona el efecto visual de un rayo, compuesto por una rama principal y ramas laterales.
+ * El efecto se limita a una zona virtual definida y tiene una duración especificada.
+ */
 public class Lightning {
     private List<game.effects.LightningBranch> branches;
     private long startTime;
     private long duration;
-    private int virtualWidth;  // ancho de la zona de efecto
-    private int virtualHeight; // alto de la zona de efecto
+    private int virtualWidth;  // Ancho de la zona de efecto
+    private int virtualHeight; // Alto de la zona de efecto
     private Random rand = new Random();
-    private int offsetX; // posición X en el mundo para el efecto (ya transformado)
-    private int offsetY; // posición Y en el mundo para el efecto
+    private int offsetX; // Posición X en el mundo para el efecto (tras transformación)
+    private int offsetY; // Posición Y en el mundo para el efecto
 
     /**
-     * Constructor para generar el efecto de rayo dentro de una zona determinada.
+     * Construye un nuevo efecto de rayo dentro de una zona específica.
      *
      * @param duration   Duración del efecto en milisegundos.
-     * @param offsetX    Coordenada X de la zona.
-     * @param offsetY    Coordenada Y de la zona.
-     * @param zoneWidth  Ancho de la zona (en el espacio del efecto).
-     * @param zoneHeight Alto de la zona (en el espacio del efecto).
+     * @param offsetX    Coordenada X de la zona en el mundo.
+     * @param offsetY    Coordenada Y de la zona en el mundo.
+     * @param zoneWidth  Ancho de la zona en la que se genera el efecto.
+     * @param zoneHeight Alto de la zona en la que se genera el efecto.
      */
     public Lightning(long duration, int offsetX, int offsetY, int zoneWidth, int zoneHeight) {
         this.duration = duration;
@@ -36,9 +40,11 @@ public class Lightning {
     }
 
     /**
-     * Genera la rama principal y las ramas laterales dentro de la zona.
-     * Se utiliza un número fijo de pasos para la rama principal y se aumenta la
-     * probabilidad de generar ramas laterales.
+     * Genera la rama principal y las ramas laterales del rayo.
+     * La rama principal se compone de segmentos lineales con leves perturbaciones,
+     * y las ramas laterales se generan aleatoriamente a partir de puntos intermedios.
+     *
+     * @return Lista de ramas que conforman el rayo.
      */
     private List<game.effects.LightningBranch> generateBranches() {
         List<game.effects.LightningBranch> branchList = new ArrayList<>();
@@ -54,7 +60,7 @@ public class Lightning {
             // Perturbar la posición ideal con variación aleatoria
             int perturbX = prevPoint.x + rand.nextInt(21) - 10;
             int perturbY = idealY + rand.nextInt(21) - 10;
-            // Asegurarse de que el punto esté dentro de la zona
+            // Asegurar que el punto esté dentro de la zona
             perturbX = Math.max(0, Math.min(virtualWidth, perturbX));
             perturbY = Math.max(0, Math.min(virtualHeight, perturbY));
             Point currentPoint = new Point(perturbX, perturbY);
@@ -65,7 +71,7 @@ public class Lightning {
         }
         branchList.add(new game.effects.LightningBranch(mainSegments));
 
-        // Generar ramas laterales: aumentar la probabilidad para obtener más ramas
+        // Generar ramas laterales con mayor probabilidad para aumentar el detalle
         for (int i = 3; i < steps - 3; i++) {
             if (rand.nextFloat() < 0.65f) { // Aumentado de 0.35f a 0.65f
                 List<game.effects.LightningSegment> branchSegments = new ArrayList<>();
@@ -81,7 +87,7 @@ public class Lightning {
                     newX = Math.max(0, Math.min(virtualWidth, newX));
                     newY = Math.max(0, Math.min(virtualHeight, newY));
                     Point branchPoint = new Point(newX, newY);
-                    // Grosor de la rama lateral disminuye de 6 a 1
+                    // Grosor que disminuye de 6 a 1 en la rama lateral
                     float branchThickness = 6 * (1 - t) + 1;
                     branchSegments.add(new game.effects.LightningSegment(branchPrev, branchPoint, branchThickness));
                     branchPrev = branchPoint;
@@ -93,7 +99,10 @@ public class Lightning {
     }
 
     /**
-     * Dibuja el efecto de rayo: traslada el Graphics2D a la posición de la zona y dibuja las ramas.
+     * Dibuja el efecto de rayo trasladando el contexto gráfico a la posición definida
+     * y renderizando todas las ramas del rayo.
+     *
+     * @param g Objeto Graphics2D utilizado para el renderizado.
      */
     public void draw(Graphics2D g) {
         AffineTransform old = g.getTransform();
@@ -105,7 +114,9 @@ public class Lightning {
     }
 
     /**
-     * Indica si el efecto de rayo aún está activo.
+     * Indica si el efecto de rayo aún se encuentra activo en función de su duración.
+     *
+     * @return {@code true} si el efecto sigue activo; {@code false} si ha finalizado.
      */
     public boolean isActive() {
         return System.currentTimeMillis() - startTime < duration;

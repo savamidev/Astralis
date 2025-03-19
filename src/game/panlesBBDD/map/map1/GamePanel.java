@@ -7,9 +7,11 @@ import game.objects.PortalNPC;
 import game.effects.LeafParticleEffect;
 import game.effects.RunGrassEffect;
 import game.listeners.LevelTransitionListener;
-import game.panlesBBDD.map.map1.CollisionManager;
+
+import game.panlesBBDD.map.colisionsTools.CollisionManager;
+import game.panlesBBDD.map.colisionsTools.TileMap;
 import game.panlesBBDD.map.map1.DeathStyledDialog;
-import game.panlesBBDD.map.map1.TileMap;
+
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,6 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.sound.sampled.*;
 
+/**
+ * Panel principal del juego que se encarga de la renderización y actualización
+ * de todos los elementos (jugador, fondo, objetos, efectos y transiciones de nivel).
+ */
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private Timer timer;
     private Player player;
@@ -76,6 +82,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     private int houseX;
     private int houseY;
 
+    /**
+     * Constructor que inicializa el GamePanel, carga los recursos (mapa, fondo, sonidos, objetos)
+     * y configura el timer de actualización.
+     */
     public GamePanel() {
         setPreferredSize(new Dimension(1920, 1080));
         setOpaque(false);
@@ -124,6 +134,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         runGrassEffect = new RunGrassEffect(maxGrassParticles);
     }
 
+    /**
+     * Asigna el listener para la transición de nivel.
+     *
+     * @param listener Instancia de LevelTransitionListener.
+     */
     public void setLevelTransitionListener(LevelTransitionListener listener) {
         this.levelTransitionListener = listener;
     }
@@ -181,6 +196,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g2d.dispose();
     }
 
+    /**
+     * Dibuja el mapa de tiles (útil en modo debug).
+     *
+     * @param g2d Objeto Graphics2D para el dibujo.
+     */
     private void drawTileMap(Graphics2D g2d) {
         int tileSize = tileMap.getTileSize();
         int[][] tiles = tileMap.getTiles();
@@ -335,6 +355,10 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         repaint();
     }
 
+    /**
+     * Ejecuta la secuencia de muerte, deteniendo sonidos y transiciones,
+     * mostrando el diálogo de muerte y reiniciando el juego según la lógica definida.
+     */
     private void triggerDeath() {
         deathTriggered = true;
         timer.stop();
@@ -366,6 +390,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         dsd.showDialog();
     }
 
+    /**
+     * Reproduce el sonido de recogida al interactuar con un coleccionable.
+     */
     private void playCollectSound() {
         try {
             URL url = getClass().getResource("/resources/sound/collect/collect.wav");
@@ -382,6 +409,11 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         }
     }
 
+    /**
+     * Dibuja los mensajes superpuestos (colección y instrucciones) en la pantalla.
+     *
+     * @param g2d Objeto Graphics2D utilizado para renderizar los mensajes.
+     */
     private void drawOverlayMessages(Graphics2D g2d) {
         long currentTime = System.currentTimeMillis();
         if (collectibleMessage != null) {

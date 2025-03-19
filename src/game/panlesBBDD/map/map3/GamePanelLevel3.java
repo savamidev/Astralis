@@ -1,13 +1,17 @@
+/**
+ * Representa el panel del juego para el Nivel 3.
+ * Se encarga de actualizar la lógica y renderizar los elementos del nivel (jugador, fondo, mapa,
+ * NPC final, stalactitas, partículas de pisada y sistema de niebla).
+ */
 package game.controls.movements;
 
 import game.audio.BackgroundSound;
 import game.effects.FogParticleSystem;
 import game.objects.FinalNPC;
 import game.objects.Stalactite;
+import game.panlesBBDD.map.colisionsTools.TileMap;
+import game.panlesBBDD.map.colisionsTools.CollisionManager;
 import game.panlesBBDD.map.map1.DeathStyledDialog;
-import game.panlesBBDD.map.map1.TileMap;
-import game.panlesBBDD.map.map1.CollisionManager;
-import game.video.TransitionVideoPanel;
 
 import javax.sound.sampled.Clip;
 import javax.swing.*;
@@ -18,12 +22,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GamePanelLevel3 extends JPanel implements ActionListener, KeyListener {
+    // Timer de actualización
     private Timer timer;
+    // Jugador y sus elementos asociados
     private Player player;
+    // Imagen de fondo del nivel
     private Image backgroundImage;
+    // Cámara que sigue al jugador
     private Camera camera;
 
-    // Dimensiones del mundo y pantalla visible
+    // Dimensiones del mundo y de la pantalla visible
     private int worldWidth = 3840;
     private int worldHeight = 1080;
     private int screenWidth = 1920;
@@ -34,26 +42,31 @@ public class GamePanelLevel3 extends JPanel implements ActionListener, KeyListen
     private final int initialStartY = 850;
     private final boolean debugMode = false;
 
-    // Sistema de colisiones
+    // Sistema de colisiones basado en un TileMap
     private TileMap tileMap;
     private CollisionManager collisionManager;
 
-    // Efecto de partículas al andar
+    // Lista de partículas generadas al caminar
     private List<game.effects.Particle> footParticles;
 
     // Sistema de partículas de niebla
     private FogParticleSystem fogSystem;
 
-    // Objetos adicionales
+    // NPC final del nivel y lista de stalactitas
     private FinalNPC finalNPC;
     private List<Stalactite> stalactites;
 
-    // Audio de fondo
+    // Audio de fondo del nivel
     private BackgroundSound backgroundSound;
 
     // Offset para “bajar” el área de colisión
     private final int collisionOffset = 20;
 
+    /**
+     * Constructor que inicializa el panel del Nivel 3.
+     * Se configuran los recursos gráficos, el jugador, la cámara, el sistema de colisiones,
+     * los NPC, el audio y los efectos visuales.
+     */
     public GamePanelLevel3() {
         setPreferredSize(new Dimension(screenWidth, screenHeight));
         setOpaque(false);
@@ -120,7 +133,11 @@ public class GamePanelLevel3 extends JPanel implements ActionListener, KeyListen
         timer.start();
     }
 
-    // Retorna el rectángulo de colisión ajustado
+    /**
+     * Retorna el rectángulo de colisión ajustado, desplazado hacia abajo.
+     *
+     * @return Rectángulo ajustado para colisiones.
+     */
     private Rectangle getAdjustedCollisionRectangle() {
         Rectangle r = player.getCollisionRectangle();
         return new Rectangle(r.x, r.y + collisionOffset, r.width, r.height - collisionOffset);
@@ -306,6 +323,11 @@ public class GamePanelLevel3 extends JPanel implements ActionListener, KeyListen
         }
     }
 
+    /**
+     * Genera partículas de pisada a partir de la zona de los pies del jugador.
+     *
+     * @param feet Rectángulo que representa la zona de los pies.
+     */
     private void spawnFootParticles(Rectangle feet) {
         int numParticles = 2;
         for (int i = 0; i < numParticles; i++) {
@@ -320,13 +342,12 @@ public class GamePanelLevel3 extends JPanel implements ActionListener, KeyListen
         }
     }
 
+    /**
+     * Ejecuta la secuencia de transición final mostrando el video y finalizando el juego.
+     */
     private void triggerFinalTransition() {
         System.out.println("NPC final colisionado: iniciando transición final con video...");
-
-        // Eliminar el KeyListener para evitar nuevos eventos
         removeKeyListener(this);
-
-        // Detener timer y sonidos, y deshabilitar la reproducción de pisadas
         timer.stop();
         player.disableFootstepSound();
         player.setAlive(false);
@@ -339,7 +360,7 @@ public class GamePanelLevel3 extends JPanel implements ActionListener, KeyListen
             System.err.println("Error al detener el audio de fondo: " + ex.getMessage());
         }
 
-        TransitionVideoPanel videoPanel = new TransitionVideoPanel(() -> {
+        game.video.VideoFinal videoPanel = new game.video.VideoFinal(() -> {
             System.out.println("Video final completado. Finalizando juego...");
             System.exit(0);
         });
@@ -349,6 +370,9 @@ public class GamePanelLevel3 extends JPanel implements ActionListener, KeyListen
         videoPanel.requestFocusInWindow();
     }
 
+    /**
+     * Ejecuta la secuencia de muerte por colisión letal.
+     */
     private void triggerDeath() {
         System.out.println("El jugador ha muerto por colisión letal.");
         timer.stop();

@@ -8,6 +8,11 @@ import java.io.InputStream;
 import javax.sound.sampled.*;
 import game.panlesBBDD.map.map1.ScaledGif;
 
+/**
+ * Representa un diálogo de muerte estilizado, que muestra una animación (GIF escalado)
+ * y reproduce música de muerte. Incluye efectos de fade in/out en la opacidad y ejecuta
+ * una acción al cerrarse.
+ */
 public class DeathStyledDialog extends JDialog {
     // Variables para la animación
     private Timer timer;
@@ -17,10 +22,17 @@ public class DeathStyledDialog extends JDialog {
     private Runnable onClose;
     private Clip deathMusic;
 
+    /**
+     * Crea un diálogo de muerte con estilo, configurando la animación, la música de muerte
+     * y el comportamiento de cierre.
+     *
+     * @param owner   Marco propietario del diálogo.
+     * @param onClose Acción a ejecutar al cerrar el diálogo.
+     */
     public DeathStyledDialog(Frame owner, Runnable onClose) {
         super(owner, true);
         this.onClose = onClose;
-        // Configuración del dialogo
+        // Configuración del diálogo
         setUndecorated(true);
         setSize(1920, 1080);
         setLocationRelativeTo(owner);
@@ -60,12 +72,15 @@ public class DeathStyledDialog extends JDialog {
                     }
                     return;
                 }
-                // Actualizar la opacidad del dialogo
+                // Actualizar la opacidad del diálogo
                 setOpacity(currentAlpha);
             }
         });
     }
 
+    /**
+     * Carga el clip de audio para la música de muerte desde el recurso especificado.
+     */
     private void loadDeathMusic() {
         try {
             InputStream is = getClass().getResourceAsStream("/resources/sound/gameover.wav");
@@ -81,6 +96,10 @@ public class DeathStyledDialog extends JDialog {
         }
     }
 
+    /**
+     * Muestra el diálogo de muerte, reiniciando la animación, iniciando la música de muerte
+     * y haciendo visible el diálogo.
+     */
     public void showDialog() {
         // Reiniciar la animación
         currentAlpha = 0.0f;
@@ -91,7 +110,7 @@ public class DeathStyledDialog extends JDialog {
             deathMusic.setFramePosition(0);
             deathMusic.start();
         }
-        // Iniciar la animación y mostrar el dialogo
+        // Iniciar la animación y mostrar el diálogo
         timer.start();
         setVisible(true);
     }

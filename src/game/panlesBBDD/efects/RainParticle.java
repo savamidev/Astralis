@@ -2,6 +2,10 @@ package game.effects;
 
 import java.awt.Color;
 
+/**
+ * Representa una partícula de lluvia que extiende la funcionalidad de {@link Particle}.
+ * Incluye características específicas como velocidades base y un valor alfa inicial para efectos de transparencia.
+ */
 public class RainParticle extends game.effects.Particle {
     public int initialAlpha; // Valor alfa inicial para el efecto de transparencia
     private float baseDx, baseDy; // Velocidades base para la gota
@@ -9,6 +13,18 @@ public class RainParticle extends game.effects.Particle {
     // Variable estática para incrementar la velocidad (1.0 = velocidad base)
     public static float speedMultiplier = 1.0f;
 
+    /**
+     * Crea una partícula de lluvia con las propiedades especificadas.
+     *
+     * @param x            Posición X inicial.
+     * @param y            Posición Y inicial.
+     * @param dx           Velocidad en el eje X.
+     * @param dy           Velocidad en el eje Y.
+     * @param maxLife      Vida máxima de la partícula.
+     * @param colorRGB     Color de la partícula.
+     * @param size         Tamaño de la partícula.
+     * @param initialAlpha Valor alfa inicial para la transparencia.
+     */
     public RainParticle(float x, float y, float dx, float dy, float maxLife, int colorRGB, float size, int initialAlpha) {
         super(x, y, dx, dy, maxLife, colorRGB, size);
         this.initialAlpha = initialAlpha;
@@ -16,7 +32,13 @@ public class RainParticle extends game.effects.Particle {
         this.baseDy = dy;
     }
 
-    // Método fábrica para crear una partícula de lluvia aleatoria
+    /**
+     * Método fábrica para crear una partícula de lluvia aleatoria dentro de los límites del mundo.
+     *
+     * @param worldWidth  Ancho del mundo.
+     * @param worldHeight Altura del mundo.
+     * @return Una instancia de {@link RainParticle} con propiedades generadas aleatoriamente.
+     */
     public static RainParticle createRandom(int worldWidth, int worldHeight) {
         float x = (float) (Math.random() * worldWidth);
         float y = (float) (Math.random() * worldHeight);
@@ -34,14 +56,22 @@ public class RainParticle extends game.effects.Particle {
         return new RainParticle(x, y, dx, dy, maxLife, colorRGB, size, alpha);
     }
 
+    /**
+     * Actualiza la posición de la partícula de lluvia utilizando las velocidades base
+     * multiplicadas por el speedMultiplier y decrementa su vida.
+     */
     @Override
     public void update() {
-        // Actualizar posición usando las velocidades base multiplicadas por speedMultiplier
         x += baseDx * speedMultiplier;
         y += baseDy * speedMultiplier;
         life -= 1;
     }
 
+    /**
+     * Retorna la opacidad actual de la partícula de lluvia, escalada por el valor alfa inicial.
+     *
+     * @return Un valor flotante representando la opacidad actual.
+     */
     @Override
     public float getAlpha() {
         float lifeFraction = Math.max(0, life / maxLife);
